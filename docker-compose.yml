@@ -16,6 +16,7 @@ services:
         condition: service_healthy
     networks:
       - internal
+      - public
 
   db:
     image: pgvector/pgvector:pg16
@@ -44,6 +45,7 @@ networks:
   internal:
     # Internal-only network — Postgres is not reachable from outside Docker
     internal: true
+  public:
 
 volumes:
   pgdata:
