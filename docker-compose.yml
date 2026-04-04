@@ -1,0 +1,49 @@
+version: "3.9"
+
+services:
+  mcp:
+    build: ./mcp_server
+    ports:
+      - "8080:8080"
+    env_file: ./mcp_server/.env
+    # REQUIRED in .env:
+    #   - NOTION_TOKEN
+    #   - RAG_SERVER_SECRET (for HMAC-SHA256 authentication)
+    #   - RAG_API_KEYS (format: hmac_sha256_hex:workspace_uuid)
+    #   - RAG_DATABASE_URL=postgresql://mcp_app:${POSTGRES_PASSWORD}@db:5432/notion_mcp
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - internal
+
+  db:
+    image: pgvector/pgvector:pg16
+    env_file: ./mcp_server/.env
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: notion_mcp
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./mcp_server/schema.sql:/docker-entrypoint-initdb.d/schema.sql:ro
+    # Do NOT publish 5432 to the host in production.
+    # The mcp service reaches Postgres by service name "db" on the internal network.
+    # Uncomment the next two lines for local dev access only:
+    # ports:
+    #   - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d notion_mcp"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    networks:
+      - internal
+
+networks:
+  internal:
+    # Internal-only network — Postgres is not reachable from outside Docker
+    internal: true
+
+volumes:
+  pgdata:

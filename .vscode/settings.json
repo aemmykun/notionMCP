@@ -1,5 +1,6 @@
 {
     "python.analysis.extraPaths": [
         "./mcp_server/venv/Lib/site-packages"
-    ]
+    ],
+    "python.terminal.useEnvFile": true
 }
