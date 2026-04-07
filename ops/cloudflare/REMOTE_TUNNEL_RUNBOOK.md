@@ -224,3 +224,19 @@ Expected response:
 - Do not package `.cloudflared`, `config.yml`, origin certs, or tunnel JSON credentials with the application.
 - Public exposure through Cloudflare does not replace application authentication. `X-API-Key` and actor-signing controls remain mandatory at the MCP layer.
 - Avoid pasting live API tokens or tunnel tokens into chat transcripts, committed files, or shared runbooks.
+
+## Current Production State
+
+- Hostname: `mcp.tenantsage.org`
+- Production tunnel name: `notion-mcp-managed`
+- Production tunnel ID: `f292e4ad-85c9-4170-a64a-a014b3f0cdb7`
+- Config source: `cloudflare` (remote-managed)
+- Origin service: `http://localhost:8080`
+- Connector mode: Windows `cloudflared` service on the operator host
+- Legacy local-managed tunnel `notion-mcp` was removed after cutover
+
+## Required Secret Hygiene After Setup
+
+- If a Cloudflare API token was pasted into chat, terminals, or shared notes, rotate it in the Cloudflare dashboard.
+- If a tunnel token was pasted into chat, terminals, or shared notes, refresh the tunnel token in Cloudflare and reinstall the `cloudflared` service with the new token.
+- After refreshing a compromised tunnel token, remove stale connections with the Cloudflare tunnel connections cleanup API before confirming final state.
