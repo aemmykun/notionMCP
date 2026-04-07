@@ -1,0 +1,685 @@
+openapi: 3.0.3
+info:
+  title: Notion MCP Governance-First Server
+  version: 1.4.0
+  description: |
+    MCP server for Notion with governance, workflow, audit, and approval tools.
+    Mirrors official Notion MCP tool schema and supports the new data-source API.
+servers:
+  - url: http://localhost:8080
+paths:
+  /health:
+    get:
+      summary: Health check
+      responses:
+        '200':
+          description: Server is healthy
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: ok
+  /oauth/start:
+    get:
+      summary: Begin Notion OAuth flow
+      responses:
+        '200':
+          description: Returns the Notion OAuth authorization URL
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  auth_url:
+                    type: string
+                  error:
+                    type: string
+  /oauth/callback:
+    get:
+      summary: Handle Notion OAuth callback
+      parameters:
+        - in: query
+          name: code
+          schema:
+            type: string
+          required: false
+        - in: query
+          name: state
+          schema:
+            type: string
+          required: false
+      responses:
+        '200':
+          description: OAuth token or intermediate code
+          content:
+            application/json:
+              schema:
+                type: object
+        '502':
+          description: Notion token exchange failed
+  /call_tool/policy.check:
+    post:
+      summary: Check governance policies for an action
+      security:
+        - apiKeyAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PolicyCheckInput'
+      responses:
+        '200':
+          description: Policy check result
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PolicyCheckResult'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '422':
+          $ref: '#/components/responses/MissingField'
+        '429':
+          $ref: '#/components/responses/RateLimitExceeded'
+        '500':
+          $ref: '#/components/responses/ServerError'
+  /call_tool/risk.score:
+    post:
+      summary: Compute a risk score (0–100)
+      security:
+        - apiKeyAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RiskScoreInput'
+      responses:
+        '200':
+          description: Risk score result
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RiskScoreResult'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '422':
+          $ref: '#/components/responses/MissingField'
+        '429':
+          $ref: '#/components/responses/RateLimitExceeded'
+        '500':
+          $ref: '#/components/responses/ServerError'
+  /call_tool/audit.log:
+    post:
+      summary: Write an audit log entry
+      security:
+        - apiKeyAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AuditLogInput'
+      responses:
+        '200':
+          description: Audit log written
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StatusResult'
+        '422':
+          $ref: '#/components/responses/MissingField'
+        '500':
+          $ref: '#/components/responses/ServerError'
+  /call_tool/workflow.dispatch:
+    post:
+      summary: Create a workflow task in Notion
+      security:
+        - apiKeyAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/WorkflowDispatchInput'
+      responses:
+        '200':
+          description: Workflow task created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WorkflowDispatchResult'
+        '422':
+          $ref: '#/components/responses/MissingField'
+        '500':
+          $ref: '#/components/responses/ServerError'
+  /call_tool/approval.request:
+    post:
+      summary: Create a human approval request
+      security:
+        - apiKeyAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ApprovalRequestInput'
+      responses:
+        '200':
+          description: Approval request created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApprovalRequestResult'
+        '422':
+          $ref: '#/components/responses/MissingField'
+        '500':
+          $ref: '#/components/responses/ServerError'
+
+  # ---------------------------------------------------------------------------
+  # RAG — governance-first vector retrieval
+  # Authentication: X-API-Key header required. workspace_id is resolved server-side.
+  # Architecture: rag_sources = governance truth; rag_chunks = storage only.
+  # ---------------------------------------------------------------------------
+  /rag_tool/rag.retrieve:
+    post:
+      summary: Governance-first vector retrieval
+      security:
+        - apiKeyAuth: []
+      description: |
+        Filters at source level (workspace_id resolved from API key, status='published',
+        effective window, legal_hold=FALSE) before ranking chunks by cosine similarity.
+        Optionally scopes to a specific child via child_id (joins rag_source_access).
+        workspace_id is NOT accepted in the request body.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RagRetrieveInput'
+      responses:
+        '200':
+          description: Ranked chunks with similarity scores
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RagRetrieveResult'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '422':
+          $ref: '#/components/responses/MissingField'
+        '429':
+          $ref: '#/components/responses/RateLimitExceeded'
+        '500':
+          $ref: '#/components/responses/ServerError'
+  /rag_tool/rag.ingest_source:
+    post:
+      summary: Create a RAG governance source record
+      security:
+        - apiKeyAuth: []
+      description: |
+        All governance metadata lives here: status, visibility,
+        effective_from/to, legal_hold, retention_class.
+        workspace_id is resolved from X-API-Key — do NOT pass it in the body.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RagIngestSourceInput'
+      responses:
+        '200':
+          description: Source created; returns the new source_id
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RagIngestSourceResult'
+        '401':
+          description: Missing or invalid X-API-Key
+        '422':
+          $ref: '#/components/responses/MissingField'
+        '500':
+          $ref: '#/components/responses/ServerError'
+  /rag_tool/rag.ingest_chunks:
+    post:
+      summary: Insert content chunks for a governance source
+      security:
+        - apiKeyAuth: []
+      description: |
+        Storage-oriented only: content, embedding, position, token_count.
+        Governance is inherited via source_id → rag_sources.
+        workspace_id is resolved from X-API-Key — do NOT pass it in the body.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RagIngestChunksInput'
+      responses:
+        '200':
+          description: Number of chunks inserted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RagIngestChunksResult'
+        '401':
+          description: Missing or invalid X-API-Key
+        '422':
+          $ref: '#/components/responses/MissingField'
+        '500':
+          $ref: '#/components/responses/ServerError'
+  /rag_tool/resource.list:
+    post:
+      summary: List authorized resources via secure SQL view
+      security:
+        - apiKeyAuth: []
+      description: |
+        Standalone, stateless authorized resource listing.
+        The caller supplies actor identity per request, the server resolves workspace_id
+        from X-API-Key, and SQL authorization is enforced through secure views.
+        Only curated resource fields are returned; no raw payload persistence is required.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ResourceListInput'
+      responses:
+        '200':
+          description: Authorized resources visible to the supplied actor
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResourceListResult'
+        '401':
+          description: Missing or invalid X-API-Key
+        '422':
+          $ref: '#/components/responses/MissingField'
+        '429':
+          $ref: '#/components/responses/RateLimitExceeded'
+        '500':
+          $ref: '#/components/responses/ServerError'
+  /rag_tool/resource.get:
+    post:
+      summary: Get one authorized resource via secure SQL view
+      security:
+        - apiKeyAuth: []
+      description: |
+        Standalone, stateless authorized resource lookup.
+        The caller supplies actor identity per request, the server resolves workspace_id
+        from X-API-Key, and SQL authorization is enforced through secure views.
+        Absent or unauthorized resources return null to avoid existence disclosure.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ResourceGetInput'
+      responses:
+        '200':
+          description: Authorized resource if visible to the supplied actor; null otherwise
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResourceGetResult'
+        '401':
+          description: Missing or invalid X-API-Key
+        '422':
+          $ref: '#/components/responses/MissingField'
+        '429':
+          $ref: '#/components/responses/RateLimitExceeded'
+        '500':
+          $ref: '#/components/responses/ServerError'
+
+components:
+  securitySchemes:
+    apiKeyAuth:
+      type: apiKey
+      in: header
+      name: X-API-Key
+      description: >
+        Required for all tool endpoints (both /call_tool/* and /rag_tool/*).
+        Value is hashed with HMAC-SHA256 (using RAG_SERVER_SECRET) and looked up in RAG_API_KEYS.
+        The matching workspace_id is injected server-side via UUIDv5 derivation; never pass it in the body.
+        Rate limited to 60 requests/minute per API key.
+  responses:
+    MissingField:
+      description: Missing required field in request body
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              detail:
+                type: string
+    RateLimitExceeded:
+      description: Rate limit exceeded (60 requests/minute per API key)
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              detail:
+                type: string
+                example: "Rate limit exceeded. Maximum 60 requests per minute per API key."
+      headers:
+        Retry-After:
+          schema:
+            type: integer
+            example: 60
+          description: Number of seconds to wait before retrying
+    Unauthorized:
+      description: Missing or invalid X-API-Key header
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              detail:
+                type: string
+                example: "Missing or invalid API key"
+    ServerError:
+      description: Internal server error
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              detail:
+                type: string
+  schemas:
+    PolicyCheckInput:
+      type: object
+      required:
+        - actor
+        - action
+      properties:
+        actor:
+          type: string
+        action:
+          type: string
+        context:
+          type: object
+    PolicyCheckResult:
+      type: object
+      properties:
+        matchedPolicies:
+          type: integer
+    RiskScoreInput:
+      type: object
+      required:
+        - actor
+      properties:
+        actor:
+          type: string
+        category:
+          type: string
+        amount:
+          type: number
+        priority:
+          type: string
+    RiskScoreResult:
+      type: object
+      properties:
+        riskScore:
+          type: integer
+    AuditLogInput:
+      type: object
+      required:
+        - actor
+        - action
+        - input
+      properties:
+        actor:
+          type: string
+        action:
+          type: string
+        input:
+          type: object
+        output:
+          type: object
+        policyApplied:
+          type: string
+        riskScore:
+          type: number
+    WorkflowDispatchInput:
+      type: object
+      required:
+        - actor
+        - type
+        - title
+      properties:
+        actor:
+          type: string
+        type:
+          type: string
+        title:
+          type: string
+        description:
+          type: string
+        priority:
+          type: string
+        metadata:
+          type: object
+    WorkflowDispatchResult:
+      type: object
+      properties:
+        status:
+          type: string
+        pageId:
+          type: string
+    ApprovalRequestInput:
+      type: object
+      required:
+        - actor
+        - subject
+        - reason
+      properties:
+        actor:
+          type: string
+        subject:
+          type: string
+        reason:
+          type: string
+        riskScore:
+          type: number
+        relatedWorkflowId:
+          type: string
+    ApprovalRequestResult:
+      type: object
+      properties:
+        status:
+          type: string
+        approvalId:
+          type: string
+    StatusResult:
+      type: object
+      properties:
+        status:
+          type: string
+    # -------------------------------------------------------------------------
+    # RAG schemas
+    # -------------------------------------------------------------------------
+    RagRetrieveInput:
+      type: object
+      required:
+        - query_embedding
+      properties:
+        query_embedding:
+          type: array
+          items:
+            type: number
+          description: Embedding vector of the search query.
+        top_k:
+          type: integer
+          default: 10
+        child_id:
+          type: string
+          description: Optional. When set, adds a join on rag_source_access.
+    RagRetrieveResult:
+      type: object
+      properties:
+        results:
+          type: array
+          items:
+            type: object
+            properties:
+              id:              { type: string }
+              source_id:       { type: string }
+              content:         { type: string }
+              position:        { type: integer }
+              token_count:     { type: integer }
+              source_name:     { type: string }
+              visibility:      { type: string }
+              retention_class: { type: string }
+              similarity:      { type: number }
+    RagIngestSourceInput:
+      type: object
+      required:
+        - name
+      properties:
+        name:
+          type: string
+        status:
+          type: string
+          enum: [draft, published, archived]
+          default: draft
+        visibility:
+          type: string
+          enum: [private, workspace, public]
+          default: private
+        effective_from:
+          type: string
+          format: date-time
+        effective_to:
+          type: string
+          format: date-time
+        legal_hold:
+          type: boolean
+          default: false
+        retention_class:
+          type: string
+    RagIngestSourceResult:
+      type: object
+      properties:
+        source_id:
+          type: string
+    RagIngestChunksInput:
+      type: object
+      required:
+        - source_id
+        - chunks
+      properties:
+        source_id:
+          type: string
+        chunks:
+          type: array
+          items:
+            type: object
+            required:
+              - content
+              - embedding
+            properties:
+              content:
+                type: string
+              embedding:
+                type: array
+                items:
+                  type: number
+              position:
+                type: integer
+              token_count:
+                type: integer
+    RagIngestChunksResult:
+      type: object
+      properties:
+        ingested:
+          type: integer
+    ResourceListInput:
+      type: object
+      required:
+        - actorId
+      properties:
+        actorId:
+          type: string
+        actorType:
+          type: string
+          default: user
+        memberId:
+          type: string
+        resourceType:
+          type: string
+        limit:
+          type: integer
+          default: 50
+        requestId:
+          type: string
+    ResourceGetInput:
+      type: object
+      required:
+        - actorId
+        - resourceId
+      properties:
+        actorId:
+          type: string
+        actorType:
+          type: string
+          default: user
+        resourceId:
+          type: string
+        requestId:
+          type: string
+    ResourceRecord:
+      type: object
+      properties:
+        id:
+          type: string
+        family_id:
+          type: string
+        member_id:
+          type: string
+          nullable: true
+        source_id:
+          type: string
+          nullable: true
+        resource_type:
+          type: string
+        name:
+          type: string
+        status:
+          type: string
+        visibility:
+          type: string
+        classification:
+          type: string
+          nullable: true
+        effective_from:
+          type: string
+          nullable: true
+        effective_to:
+          type: string
+          nullable: true
+        retention_class:
+          type: string
+          nullable: true
+        created_at:
+          type: string
+        updated_at:
+          type: string
+    ResourceListResult:
+      type: object
+      properties:
+        resources:
+          type: array
+          items:
+            $ref: '#/components/schemas/ResourceRecord'
+    ResourceGetResult:
+      type: object
+      properties:
+        resource:
+          allOf:
+            - $ref: '#/components/schemas/ResourceRecord'
+          nullable: true

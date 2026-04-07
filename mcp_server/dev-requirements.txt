@@ -1,0 +1,7 @@
+pytest
+black==23.9.1
+flake8
+pre-commit
+pytest-mock
+requests
+types-psycopg2

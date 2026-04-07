@@ -1,0 +1,54 @@
+name: CI — Build Docker image
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: ["**"]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    env:
+      REGISTRY_URL: ghcr.io
+      PUSH_IMAGE: false
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v2
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+
+      - name: Check registry credentials
+        run: |
+          if [[ -n "${{ secrets.REGISTRY_USERNAME }}" && -n "${{ secrets.REGISTRY_TOKEN }}" ]]; then
+            echo "REGISTRY_CREDENTIALS=true" >> $GITHUB_ENV
+          else
+            echo "REGISTRY_CREDENTIALS=false" >> $GITHUB_ENV
+
+      - name: Login to registry (optional)
+        run: |
+          if [[ -n "${{ secrets.REGISTRY_USERNAME }}" && -n "${{ secrets.REGISTRY_TOKEN }}" ]]; then
+            echo "Logging in to registry..."
+            echo "${{ secrets.REGISTRY_TOKEN }}" | docker login ${{ env.REGISTRY_URL }} -u "${{ secrets.REGISTRY_USERNAME }}" --password-stdin
+          else
+            echo "Registry credentials are not set. Skipping login."
+          fi
+
+      - name: Build and (optionally) push
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: ${{ env.PUSH_IMAGE }}
+          tags: ${{ env.REGISTRY_URL }}/${{ github.repository }}:mcp-${{ github.sha }}
+
+      - name: Upload image metadata
+        if: always()
+        run: |
+          echo "IMAGE=${{ env.REGISTRY_URL }}/${{ github.repository }}:mcp-${{ github.sha }}" >> $GITHUB_ENV

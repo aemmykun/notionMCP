@@ -1,0 +1,9 @@
+python-dotenv
+notion-client
+mcp
+fastapi
+uvicorn[standard]
+httpx
+psycopg2-binary
+wheel>=0.46.2
+redis>=5.0.0  # Optional: for multi-instance rate limiting (set REDIS_URL)

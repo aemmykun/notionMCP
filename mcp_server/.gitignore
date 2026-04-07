@@ -1,0 +1,23 @@
+venv/
+__pycache__/
+*.pyc
+.env
+.DS_Store
+.idea/
+.vscode/
+
+# Logs
+*.log
+
+# Temporary files
+*.tmp
+*.bak
+
+# Test reports
+*.coverage
+.pytest_cache/
+
+# Build artifacts
+dist/
+build/
+*.egg-info/
