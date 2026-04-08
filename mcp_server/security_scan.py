@@ -29,34 +29,52 @@ def run_command(cmd: list[str], description: str) -> tuple[int, str]:
             text=True,
             check=False,
         )
-        output = result.stdout + result.stderr
+        output = (result.stdout or "") + (result.stderr or "")
         print(output)
         return result.returncode, output
     except Exception as e:
         print(f"ERROR: {e}")
-        return 1, str(e)
+        return 2, str(e)
 
 
-def main():
+def parse_json_safe(output: str):
+    """Safely parse JSON output, return None if invalid."""
+    try:
+        return json.loads(output)
+    except Exception:
+        return None
+def parse_json_safe(output: str):
+    """Safely parse JSON output, return None if invalid."""
+    try:
+        return json.loads(output)
+    except Exception:
+        return None
+
+
+def main() -> int:
     parser = argparse.ArgumentParser(description="Run security scans")
     parser.add_argument(
         "--fail-on-high",
         action="store_true",
-        help="Exit with error if high-severity issues found",
+        help="Exit with error if scanner findings are detected",
     )
     args = parser.parse_args()
 
     # Ensure we're in the mcp_server directory
     if not Path("requirements.txt").exists():
         print("ERROR: Must run from mcp_server directory")
-        sys.exit(1)
+        return 1
 
     print("Security Scanning Report")
     print("=" * 70)
     print("Timestamp: ", end="")
-    subprocess.run(["python", "-c", "import datetime; print(datetime.datetime.now())"])
+    subprocess.run(
+        [sys.executable, "-c", "import datetime; print(datetime.datetime.now())"],
+        check=False,
+    )
     
-    has_errors = False
+    findings = False
+    tool_errors = False
     
     # 1. pip-audit: Check for known vulnerabilities in dependencies
     print("\n\n" + "=" * 70)
@@ -64,15 +82,19 @@ def main():
     print("=" * 70)
     
     exit_code, output = run_command(
-        ["pip-audit", "--desc", "--format", "json"],
+        [sys.executable, "-m", "pip_audit", "--desc", "--format", "json"],
         "pip-audit: Dependency vulnerability scan",
     )
     
-    if exit_code != 0 and "Found 0 known vulnerabilities" not in output:
-        has_errors = True
-        print("⚠️  VULNERABILITIES FOUND")
+    audit_json = parse_json_safe(output)
+    if exit_code == 0:
+        print("✅ No known vulnerabilities (pip-audit)")
+    elif exit_code == 1 and audit_json is not None:
+        findings = True
+        print("⚠️  Vulnerabilities found by pip-audit")
     else:
-        print("✅ No known vulnerabilities")
+        tool_errors = True
+        print("❌ pip-audit failed to run correctly")
     
     # 2. bandit: Static code security analysis
     print("\n\n" + "=" * 70)
@@ -80,16 +102,15 @@ def main():
     print("=" * 70)
     
     exit_code, output = run_command(
-        ["bandit", "-r", ".", "-ll", "-f", "screen"],
+        [sys.executable, "-m", "bandit", "-r", ".", "-ll", "-f", "screen"],
         "bandit: Code security scan (medium and high severity only)",
     )
     
-    if "No issues identified" not in output and exit_code != 0:
-        if args.fail_on_high:
-            has_errors = True
-        print("⚠️  SECURITY ISSUES FOUND")
+    if exit_code == 0:
+        print("✅ No Bandit issues found")
     else:
-        print("✅ No security issues found")
+        findings = True
+        print("⚠️  Bandit reported security issues")
     
     # 3. safety: Check for known security vulnerabilities
     print("\n\n" + "=" * 70)
@@ -97,20 +118,19 @@ def main():
     print("=" * 70)
     
     exit_code, output = run_command(
-        ["safety", "check", "--json"],
+        [sys.executable, "-m", "safety", "scan", "--output", "json"],
         "safety: Known vulnerability database check",
     )
     
-    if exit_code != 0:
-        try:
-            safety_data = json.loads(output)
-            if safety_data and len(safety_data) > 0:
-                has_errors = True
-                print("⚠️  SECURITY ADVISORIES FOUND")
-        except:
-            pass
+    safety_json = parse_json_safe(output)
+    if exit_code == 0:
+        print("✅ No Safety advisories found")
+    elif safety_json is not None:
+        findings = True
+        print("⚠️  Safety reported vulnerabilities/advisories")
     else:
-        print("✅ No security advisories")
+        tool_errors = True
+        print("❌ Safety failed to run correctly")
     
     # 4. Production preflight check
     print("\n\n" + "=" * 70)
@@ -118,12 +138,12 @@ def main():
     print("=" * 70)
     
     exit_code, output = run_command(
-        ["python", "production_preflight.py"],
+        [sys.executable, "production_preflight.py"],
         "Production preflight check",
     )
     
     if exit_code != 0 or "FAIL" in output:
-        print("⚠️  PRODUCTION CONFIG ISSUES")
+        print("⚠️  Production config issues detected")
         # Don't fail the scan for config issues (they may be intentional in dev)
     else:
         print("✅ Production config OK")
@@ -133,17 +153,16 @@ def main():
     print("SECURITY SCAN SUMMARY")
     print("=" * 70)
     
-    if has_errors:
-        print("❌ SCAN FAILED: Security issues detected")
-        if args.fail_on_high:
-            print("\nRecommendation: Fix high-severity issues before deployment")
-            return 1
-        else:
-            print("\nNote: Run with --fail-on-high to enforce in CI/CD")
-            return 0
-    else:
-        print("✅ SCAN PASSED: No critical security issues detected")
-        return 0
+    if tool_errors:
+        print("❌ SCAN FAILED: one or more security tools failed to execute")
+        return 1
+    
+    if findings:
+        print("⚠️  Findings detected")
+        return 1 if args.fail_on_high else 0
+    
+    print("✅ SCAN PASSED: no critical security issues detected")
+    return 0
 
 
 if __name__ == "__main__":
