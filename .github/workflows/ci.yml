@@ -53,6 +53,8 @@ jobs:
           PGPASSWORD: test_password
         run: |
           psql -h localhost -U postgres -d notion_mcp_test -f schema.sql
+          psql -h localhost -U postgres -d notion_mcp_test -f migrations/001_domain_backbone.sql
+          psql -h localhost -U postgres -d notion_mcp_test -f migrations/002_assignments_and_secure_views.sql
       
       - name: Run unit tests
         working-directory: mcp_server
