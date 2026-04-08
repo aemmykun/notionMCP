@@ -38,10 +38,9 @@ jobs:
         with:
           python-version: '3.11'
           cache: 'pip'
-          cache-dependency-path: mcp_server/requirements.txt
+          cache-dependency-path: pyproject.toml
       
       - name: Install dependencies
-        working-directory: mcp_server
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
@@ -58,7 +57,6 @@ jobs:
           exit 1
       
       - name: Apply database schema
-        working-directory: mcp_server
         env:
           PGPASSWORD: test_password
         run: |
@@ -67,7 +65,6 @@ jobs:
           psql -h localhost -U postgres -d notion_mcp_test -v ON_ERROR_STOP=1 -f db/migrations/002_assignments_and_secure_views.sql
       
       - name: Validate schema smoke test
-        working-directory: mcp_server
         env:
           PGPASSWORD: test_password
         run: |
@@ -80,7 +77,6 @@ jobs:
           fi
       
       - name: Verify RLS policies
-        working-directory: mcp_server
         env:
           PGPASSWORD: test_password
           RAG_DATABASE_URL: "postgresql://postgres:test_password@localhost:5432/notion_mcp_test"
@@ -88,7 +84,6 @@ jobs:
           python scripts/verify_rls_policies.py
       
       - name: Run unit tests
-        working-directory: mcp_server
         env:
           SKIP_NOTION_API: "true"
           RAG_SERVER_SECRET: "test-secret-for-ci-only"
@@ -97,7 +92,6 @@ jobs:
           pytest tests/unit -vv --tb=short --cov=src/mcp_server --cov-report=term-missing
       
       - name: Run security tests
-        working-directory: mcp_server
         env:
           RAG_DATABASE_URL: "postgresql://postgres:test_password@localhost:5432/notion_mcp_test"
           RAG_DATABASE_OWNER_URL: "postgresql://postgres:test_password@localhost:5432/notion_mcp_test"
@@ -126,24 +120,20 @@ jobs:
           python-version: '3.11'
       
       - name: Install dependencies
-        working-directory: mcp_server
         run: |
           python -m pip install --upgrade pip
           python -m pip install pip-audit bandit safety
           if [ -f requirements.txt ]; then python -m pip install -r requirements.txt; fi
       
       - name: Run pip-audit
-        working-directory: mcp_server
         run: |
           python -m pip_audit || true
       
       - name: Run bandit
-        working-directory: mcp_server
         run: |
           python -m bandit -r src -ll || true
       
       - name: Run safety
-        working-directory: mcp_server
         run: |
           python -m safety scan || python -m safety check || true
 
@@ -161,13 +151,11 @@ jobs:
           python-version: '3.11'
       
       - name: Install dependencies
-        working-directory: mcp_server
         run: |
           python -m pip install --upgrade pip
           pip install python-dotenv
       
       - name: Run production preflight check (strict mode)
-        working-directory: mcp_server
         env:
           # Simulate production-ready config
           NOTION_TOKEN: "secret_placeholder"
@@ -194,7 +182,6 @@ jobs:
         uses: docker/setup-buildx-action@v4
       
       - name: Build Docker image
-        working-directory: mcp_server
         run: |
           docker build -t notionmcp-test:latest .
       
