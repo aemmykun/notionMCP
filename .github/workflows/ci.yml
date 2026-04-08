@@ -70,7 +70,21 @@ jobs:
         env:
           PGPASSWORD: test_password
         run: |
-          psql -h localhost -U postgres -d notion_mcp_test -c "SELECT tablename FROM pg_tables WHERE schemaname='public';" -t | wc -l
+          echo "Checking table count..."
+          TABLE_COUNT=$(psql -h localhost -U postgres -d notion_mcp_test -c "SELECT tablename FROM pg_tables WHERE schemaname='public';" -t | wc -l)
+          echo "Found $TABLE_COUNT tables"
+          if [ "$TABLE_COUNT" -lt 3 ]; then
+            echo "ERROR: Expected at least 3 tables, found $TABLE_COUNT"
+            exit 1
+          fi
+      
+      - name: Verify RLS policies
+        working-directory: mcp_server
+        env:
+          PGPASSWORD: test_password
+          RAG_DATABASE_URL: "postgresql://postgres:test_password@localhost:5432/notion_mcp_test"
+        run: |
+          python verify_rls_policies.py
       
       - name: Run unit tests
         working-directory: mcp_server
@@ -79,7 +93,7 @@ jobs:
           RAG_SERVER_SECRET: "test-secret-for-ci-only"
           RAG_API_KEYS: "test-hmac-key:00000000-0000-0000-0000-000000000001"
         run: |
-          pytest test_server.py test_production_preflight.py test_rag_session_context.py test_frontend_bff.py -v --cov=. --cov-report=term-missing
+          pytest test_server.py test_production_preflight.py test_rag_session_context.py test_frontend_bff.py -vv --tb=short --cov=. --cov-report=term-missing
       
       - name: Run RLS security tests
         working-directory: mcp_server
@@ -87,7 +101,7 @@ jobs:
           RAG_DATABASE_URL: "postgresql://postgres:test_password@localhost:5432/notion_mcp_test"
           RAG_SERVER_SECRET: "test-secret-for-ci-only"
         run: |
-          pytest test_rls_fail_closed.py -v
+          pytest test_rls_fail_closed.py -vv --tb=short --capture=no
       
       - name: Run production security proofs
         working-directory: mcp_server
@@ -96,7 +110,7 @@ jobs:
           RAG_DATABASE_OWNER_URL: "postgresql://postgres:test_password@localhost:5432/notion_mcp_test"
           RAG_SERVER_SECRET: "test-secret-for-ci-only"
         run: |
-          pytest test_production_security_proof.py -v
+          pytest test_production_security_proof.py -vv --tb=short --capture=no
       
       - name: Show Postgres logs on failure
         if: failure()
