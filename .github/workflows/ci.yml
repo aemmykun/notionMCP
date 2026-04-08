@@ -1,0 +1,173 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  test:
+    name: Test Suite
+    runs-on: ubuntu-latest
+    
+    services:
+      postgres:
+        image: pgvector/pgvector:pg16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: test_password
+          POSTGRES_DB: notion_mcp_test
+        options: >-
+          --health-cmd "pg_isready -U postgres -d notion_mcp_test"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+          cache-dependency-path: mcp_server/requirements.txt
+      
+      - name: Install dependencies
+        working-directory: mcp_server
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install pytest pytest-cov
+      
+      - name: Apply database schema
+        working-directory: mcp_server
+        env:
+          PGPASSWORD: test_password
+        run: |
+          psql -h localhost -U postgres -d notion_mcp_test -f schema.sql
+      
+      - name: Run unit tests
+        working-directory: mcp_server
+        env:
+          SKIP_NOTION_API: "true"
+          RAG_SERVER_SECRET: "test-secret-for-ci-only"
+          RAG_API_KEYS: "test-hmac-key:00000000-0000-0000-0000-000000000001"
+        run: |
+          pytest test_server.py test_production_preflight.py test_rag_session_context.py test_frontend_bff.py -v --cov=. --cov-report=term-missing
+      
+      - name: Run RLS security tests
+        working-directory: mcp_server
+        env:
+          RAG_DATABASE_URL: "postgresql://postgres:test_password@localhost:5432/notion_mcp_test"
+          RAG_SERVER_SECRET: "test-secret-for-ci-only"
+        run: |
+          pytest test_rls_fail_closed.py -v
+      
+      - name: Run production security proofs
+        working-directory: mcp_server
+        env:
+          RAG_DATABASE_URL: "postgresql://postgres:test_password@localhost:5432/notion_mcp_test"
+          RAG_DATABASE_OWNER_URL: "postgresql://postgres:test_password@localhost:5432/notion_mcp_test"
+          RAG_SERVER_SECRET: "test-secret-for-ci-only"
+        run: |
+          pytest test_production_security_proof.py -v
+
+  security-scan:
+    name: Security Scanning
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      
+      - name: Install security tools
+        run: |
+          python -m pip install --upgrade pip
+          pip install pip-audit bandit safety
+      
+      - name: Install project dependencies
+        working-directory: mcp_server
+        run: |
+          pip install -r requirements.txt
+      
+      - name: Run pip-audit (dependency vulnerabilities)
+        working-directory: mcp_server
+        run: |
+          pip-audit --desc
+      
+      - name: Run bandit (code security scan)
+        working-directory: mcp_server
+        run: |
+          bandit -r . -ll -f json -o bandit-report.json || true
+          bandit -r . -ll
+      
+      - name: Run safety check
+        working-directory: mcp_server
+        run: |
+          safety check --json || true
+          safety check
+
+  preflight:
+    name: Production Preflight
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      
+      - name: Install dependencies
+        working-directory: mcp_server
+        run: |
+          python -m pip install --upgrade pip
+          pip install python-dotenv
+      
+      - name: Run production preflight check (strict mode)
+        working-directory: mcp_server
+        env:
+          # Simulate production-ready config
+          NOTION_TOKEN: "secret_placeholder"
+          GOVERNANCE_DB_ID: "placeholder-db-id"
+          AUDIT_DB_ID: "placeholder-db-id"
+          WORKFLOW_DB_ID: "placeholder-db-id"
+          APPROVAL_DB_ID: "placeholder-db-id"
+          RAG_SERVER_SECRET: "this-is-a-strong-secret-longer-than-32-chars"
+          ACTOR_SIGNING_SECRET: "this-is-a-strong-secret-longer-than-32-chars"
+          RAG_DATABASE_URL: "postgresql://mcp_app:secure_password@db:5432/notion_mcp"
+          RAG_API_KEYS: "dummy-key:00000000-0000-0000-0000-000000000001"
+        run: |
+          python production_preflight.py --strict
+
+  docker-build:
+    name: Docker Build Test
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+      
+      - name: Build Docker image
+        working-directory: mcp_server
+        run: |
+          docker build -t notionmcp-test:latest .
+      
+      - name: Test Docker image
+        run: |
+          docker run --rm notionmcp-test:latest python --version

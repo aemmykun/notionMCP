@@ -1361,6 +1361,8 @@ mcp_session_manager = StreamableHTTPSessionManager(server)
 
 from fastapi import FastAPI, HTTPException, Header, Depends
 import uvicorn
+from prometheus_client import Counter, Histogram, Gauge, generate_latest, CONTENT_TYPE_LATEST
+from fastapi.responses import Response
 
 @asynccontextmanager
 async def _lifespan(_app: FastAPI):
@@ -1371,6 +1373,116 @@ async def _lifespan(_app: FastAPI):
     _log.info("MCP session manager stopped")
 
 app = FastAPI(lifespan=_lifespan)
+
+# ============================================================================
+# Prometheus Metrics
+# ============================================================================
+
+# Request counters
+http_requests_total = Counter(
+    'mcp_http_requests_total',
+    'Total HTTP requests',
+    ['method', 'endpoint', 'status_code']
+)
+
+# Request duration histogram (in seconds)
+http_request_duration_seconds = Histogram(
+    'mcp_http_request_duration_seconds',
+    'HTTP request duration in seconds',
+    ['method', 'endpoint'],
+    buckets=[0.005, 0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 1.0, 2.5, 5.0, 10.0, 15.0]
+)
+
+# Tool invocation counters
+tool_invocations_total = Counter(
+    'mcp_tool_invocations_total',
+    'Total tool invocations',
+    ['tool_name', 'status']
+)
+
+# Tool duration histogram
+tool_duration_seconds = Histogram(
+    'mcp_tool_duration_seconds',
+    'Tool execution duration in seconds',
+    ['tool_name'],
+    buckets=[0.01, 0.05, 0.1, 0.25, 0.5, 1.0, 2.5, 5.0, 10.0, 30.0]
+)
+
+# Active requests gauge
+http_requests_active = Gauge(
+    'mcp_http_requests_active',
+    'Currently active HTTP requests'
+)
+
+# Database connection pool metrics (if available)
+db_connections_active = Gauge(
+    'mcp_db_connections_active',
+    'Active database connections'
+)
+
+# ============================================================================
+# Metrics Middleware
+# ============================================================================
+
+from fastapi import Request as MetricsRequest
+from starlette.middleware.base import BaseHTTPMiddleware as MetricsBaseMiddleware
+import time as metrics_time
+
+class PrometheusMiddleware(MetricsBaseMiddleware):
+    """Track HTTP requests and durations in Prometheus metrics."""
+    
+    async def dispatch(self, request: MetricsRequest, call_next):
+        # Skip metrics endpoint itself to avoid recursive counting
+        if request.url.path == "/metrics":
+            return await call_next(request)
+        
+        method = request.method
+        endpoint = request.url.path
+        
+        # Increment active requests
+        http_requests_active.inc()
+        
+        start_time = metrics_time.time()
+        try:
+            response = await call_next(request)
+            status_code = response.status_code
+            
+            # Record metrics
+            http_requests_total.labels(
+                method=method,
+                endpoint=endpoint,
+                status_code=status_code
+            ).inc()
+            
+            duration = metrics_time.time() - start_time
+            http_request_duration_seconds.labels(
+                method=method,
+                endpoint=endpoint
+            ).observe(duration)
+            
+            return response
+        
+        except Exception as e:
+            # Record failed requests
+            http_requests_total.labels(
+                method=method,
+                endpoint=endpoint,
+                status_code=500
+            ).inc()
+            
+            duration = metrics_time.time() - start_time
+            http_request_duration_seconds.labels(
+                method=method,
+                endpoint=endpoint
+            ).observe(duration)
+            
+            raise
+        
+        finally:
+            # Decrement active requests
+            http_requests_active.dec()
+
+app.add_middleware(PrometheusMiddleware)
 
 # ============================================================================
 # Timeout Middleware (Application-level 15s request timeout)
@@ -1475,6 +1587,14 @@ if True:  # Indentation wrapper for minimal diff
     @app.get("/health")
     def health():
         return {"status": "ok"}
+    
+    @app.get("/metrics")
+    def metrics():
+        """Prometheus metrics endpoint for monitoring and alerting."""
+        return Response(
+            content=generate_latest(),
+            media_type=CONTENT_TYPE_LATEST
+        )
 
     @app.get("/oauth/start")
     def oauth_start():
@@ -1586,11 +1706,33 @@ if True:  # Indentation wrapper for minimal diff
         if handler is None:
             raise HTTPException(status_code=404, detail="tool not found")
         try:
+            # Track tool invocation metrics
+            tool_start = metrics_time.time()
+            
             # Run sync handler in thread pool to avoid blocking event loop
-            return await asyncio.to_thread(handler, payload)
+            result = await asyncio.to_thread(handler, payload)
+            
+            # Record successful tool execution
+            tool_duration_seconds.labels(tool_name=tool_name).observe(
+                metrics_time.time() - tool_start
+            )
+            tool_invocations_total.labels(
+                tool_name=tool_name,
+                status='success'
+            ).inc()
+            
+            return result
         except KeyError as exc:
+            tool_invocations_total.labels(
+                tool_name=tool_name,
+                status='error_missing_field'
+            ).inc()
             raise HTTPException(status_code=422, detail=f"Missing required field: {exc}")
         except Exception:
+            tool_invocations_total.labels(
+                tool_name=tool_name,
+                status='error_internal'
+            ).inc()
             _log_with_context("exception", "Tool %s failed", tool_name)
             raise HTTPException(status_code=500, detail="Internal server error")
 
@@ -1636,16 +1778,42 @@ if True:  # Indentation wrapper for minimal diff
                 payload["actorId"] = actor_id
                 payload["actorType"] = actor_type
             # Apply concurrency limit for ingest operations
+            # Track tool invocation metrics
+            tool_start = metrics_time.time()
+            
             if tool_name == "rag.ingest_chunks":
                 async with _ingest_semaphore:
-                    return await asyncio.to_thread(handler, payload, workspace_id)
+                    result = await asyncio.to_thread(handler, payload, workspace_id)
             else:
-                return await asyncio.to_thread(handler, payload, workspace_id)
+                result = await asyncio.to_thread(handler, payload, workspace_id)
+            
+            # Record successful tool execution
+            tool_duration_seconds.labels(tool_name=tool_name).observe(
+                metrics_time.time() - tool_start
+            )
+            tool_invocations_total.labels(
+                tool_name=tool_name,
+                status='success'
+            ).inc()
+            
+            return result
         except HTTPException:
+            tool_invocations_total.labels(
+                tool_name=tool_name,
+                status='error_http'
+            ).inc()
             raise
         except KeyError as exc:
+            tool_invocations_total.labels(
+                tool_name=tool_name,
+                status='error_missing_field'
+            ).inc()
             raise HTTPException(status_code=422, detail=f"Missing required field: {exc}")
         except Exception:
+            tool_invocations_total.labels(
+                tool_name=tool_name,
+                status='error_internal'
+            ).inc()
             _log_with_context("exception", "RAG tool %s failed", tool_name)
             raise HTTPException(status_code=500, detail="Internal server error")
 

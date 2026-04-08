@@ -134,8 +134,28 @@ Technical and operational details live in:
 
 - `RELEASE_NOTES.md` for implementation changes, production state, and technical evolution
 - `CLIENT_INTEGRATION_MANUAL.md` for frontend, MCP client, and full-feature usage guidance
+- `OPERATIONS.md` for day-to-day operations, backup/restore, API key rotation, monitoring
 - `../ops/cloudflare/REMOTE_TUNNEL_RUNBOOK.md` for operator-managed public tunnel procedures
 - in-repo source and test files for implementation specifics
+
+## Quality Assurance
+
+QA reports and assessment documentation:
+
+- `../QA_ENGINEERING_REPORT.md` - Comprehensive technical audit (50+ pages)
+- `../EXECUTIVE_SUMMARY.md` - Leadership brief with go/no-go recommendation
+- `../REPORTS_README.md` - Navigation guide for all QA documentation
+
+## API Documentation
+
+OpenAPI specification and integration guides:
+
+- `openapi/openapi.json` - OpenAPI 3.1.0 specification (auto-generated from FastAPI)
+- `openapi/README.md` - Instructions for viewing spec in Swagger UI, Redoc
+- Interactive docs: <http://localhost:8080/docs> (when server running)
+- Alternative UI: <http://localhost:8080/redoc> (when server running)
+
+For client integration patterns, see `CLIENT_INTEGRATION_MANUAL.md`.
 
 ## TenantSage Direction
 

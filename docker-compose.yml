@@ -32,7 +32,6 @@ services:
 
   db:
     image: pgvector/pgvector:pg16
-    env_file: ./mcp_server/.env
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
@@ -59,11 +58,11 @@ services:
     profiles:
       - scale
     restart: unless-stopped
-    command: ["redis-server", "--appendonly", "yes", "--save", "60", "1000"]
+    command: ["redis-server", "--appendonly", "yes", "--save", "60", "1000", "--requirepass", "${REDIS_PASSWORD}"]
     volumes:
       - redisdata:/data
     healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
+      test: ["CMD", "redis-cli", "--raw", "ping"]
       interval: 5s
       timeout: 5s
       retries: 10

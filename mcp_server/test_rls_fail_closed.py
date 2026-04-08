@@ -39,7 +39,18 @@ def _create_broken_run_scoped_query():
     import rag
     from psycopg2.extras import RealDictCursor
     
-    def broken_run_scoped_query(workspace_id, sql, params, *, many=False, returning=True):
+    def broken_run_scoped_query(
+        workspace_id,
+        sql,
+        params,
+        *,
+        many=False,
+        returning=True,
+        timeout_ms=None,
+        actor_id=None,
+        actor_type=None,
+        request_id=None,
+    ):
         """Modified version that skips SET LOCAL (simulates bypass attempt)."""
         conn = rag._get_conn()
         conn.autocommit = False

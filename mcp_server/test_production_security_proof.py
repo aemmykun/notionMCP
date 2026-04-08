@@ -133,9 +133,12 @@ def test_cross_workspace_write_contamination_blocked():
             """
             SELECT COUNT(*) as count FROM rag_chunks 
             WHERE source_id = %(source_id)s 
-              AND content LIKE '%contamination attempt%'
+                            AND content LIKE %(content_pattern)s
             """,
-            {"source_id": source_b_id},
+                        {
+                                "source_id": source_b_id,
+                                "content_pattern": "%contamination attempt%",
+                        },
             returning=True,
         )[0]["count"]
         
