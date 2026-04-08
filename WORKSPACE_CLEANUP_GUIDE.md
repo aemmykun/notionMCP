@@ -10,6 +10,7 @@
 ### Files to KEEP (should commit first)
 
 #### Documentation Files (created during QA)
+
 - ✅ `QA_ENGINEERING_REPORT.md` - Comprehensive technical audit (50+ pages)
 - ✅ `EXECUTIVE_SUMMARY.md` - Leadership brief with go/no-go recommendation
 - ✅ `REPORTS_README.md` - Navigation guide for all reports
@@ -20,10 +21,12 @@
 - ✅ `SECURITY.md` - Security policy
 
 #### CI/CD and DevOps
+
 - ✅ `.github/workflows/ci.yml` - Automated testing pipeline
 - ✅ `.github/pull_request_template.md` - PR checklist
 
 #### Operations and Security
+
 - ✅ `mcp_server/OPERATIONS.md` - Day-to-day procedures (400+ lines)
 - ✅ `mcp_server/security_scan.py` - Security scanning script
 - ✅ `mcp_server/install_security_tools.ps1` - Security tools installer
@@ -32,6 +35,7 @@
 - ✅ `mcp_server/openapi/README.md` - API docs guide
 
 #### Test Files
+
 - ✅ `mcp_server/test_metrics_endpoint.py` - Prometheus metrics tests
 
 ### Files Modified (review changes)
@@ -49,6 +53,7 @@
 These are already in .gitignore and will be removed by `git clean`:
 
 #### Build Artifacts
+
 - `.venv/` - Virtual environment (716 MB likely)
 - `mcp_server/venv/` - Old virtual environment
 - `mcp_server/__pycache__/` - Python bytecode cache
@@ -58,6 +63,7 @@ These are already in .gitignore and will be removed by `git clean`:
 - `mcp_server/integration_tests.egg-info/` - Package metadata
 
 #### Credentials (DO NOT COMMIT)
+
 - `mcp_server/.env` - Contains secrets (already in .gitignore)
 
 ---
@@ -163,12 +169,14 @@ docker compose ps  # Verify services still running
 ### Before Running git clean
 
 ✅ **MUST DO**:
+
 1. Commit all new documentation files
 2. Commit all new tools and scripts
 3. Backup `.env` file contents (contains secrets)
 4. Verify services are running (`docker compose ps`)
 
 ❌ **DO NOT**:
+
 1. Run `git clean` before committing new files
 2. Commit the `.env` file (contains secrets)
 3. Delete files you're not sure about
@@ -193,11 +201,13 @@ pip install -r requirements.txt
 ## Expected Results
 
 ### Before Cleanup
+
 - **Files changed**: 23
 - **Files to remove**: 24 (mostly build artifacts)
 - **Disk space used**: ~750 MB (virtual environments)
 
 ### After Cleanup
+
 - **Files changed**: 0 (all committed)
 - **Files to remove**: 0
 - **Disk space freed**: ~700-750 MB

@@ -39,12 +39,11 @@ services:
     restart: unless-stopped
     volumes:
       - pgdata:/var/lib/postgresql/data
-      - ./mcp_server/schema.sql:/docker-entrypoint-initdb.d/schema.sql:ro
-    # Do NOT publish 5432 to the host in production.
-    # The mcp service reaches Postgres by service name "db" on the internal network.
-    # Uncomment the next two lines for local dev access only:
-    # ports:
-    #   - "5432:5432"
+      - ./mcp_server/01_init_user.sh:/docker-entrypoint-initdb.d/01_init_user.sh:ro
+      - ./mcp_server/schema.sql:/docker-entrypoint-initdb.d/02_schema.sql:ro
+    # SECURITY: Port 5432 is NOT published to host in production
+    # Database is only accessible via internal Docker network
+    # For local dev/testing, use: docker exec -it notionmcp-db-1 psql -U postgres -d notion_mcp
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres -d notion_mcp"]
       interval: 5s
@@ -62,19 +61,9 @@ services:
     volumes:
       - redisdata:/data
     healthcheck:
-      test: ["CMD", "redis-cli", "--raw", "ping"]
+      test: ["CMD", "sh", "-c", "redis-cli ${REDIS_PASSWORD:+-a \"$REDIS_PASSWORD\"} ping | grep -q PONG"]
       interval: 5s
       timeout: 5s
       retries: 10
     networks:
       - internal
-
-networks:
-  internal:
-    # Internal-only network — Postgres is not reachable from outside Docker
-    internal: true
-  public:
-
-volumes:
-  pgdata:
-  redisdata:

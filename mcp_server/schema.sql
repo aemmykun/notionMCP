@@ -34,21 +34,13 @@ CREATE EXTENSION IF NOT EXISTS vector;       -- for vector type and <=> operator
 -- This role will be used by the MCP server; it MUST NOT be a superuser or
 -- member of any role with BYPASSRLS.
 
-DO $$
-BEGIN
-  IF NOT EXISTS (SELECT FROM pg_roles WHERE rolname = 'mcp_app') THEN
-    CREATE ROLE mcp_app LOGIN PASSWORD 'CHANGE_ME_IN_PRODUCTION';
-  END IF;
-END
-$$;
+-- NOTE: The mcp_app role is now created by 01_init_user.sh (executed before this file)
+-- This ensures the password is properly set from the POSTGRES_PASSWORD environment variable.
+-- The init script runs first because docker-entrypoint-initdb.d executes files in alphabetical order.
 
 -- CRITICAL: Verify the role does NOT have BYPASSRLS
 -- Run after creating role: SELECT rolname, rolbypassrls FROM pg_roles WHERE rolname = 'mcp_app';
 -- Expected: mcp_app | f
-
--- Grant minimal permissions (SELECT, INSERT, UPDATE, DELETE only)
--- DO NOT grant table ownership or BYPASSRLS
-GRANT CONNECT ON DATABASE postgres TO mcp_app;  -- Adjust database name as needed
 
 -- Note: GRANT statements on tables are below, after tables are created
 
@@ -144,9 +136,12 @@ CREATE INDEX IF NOT EXISTS idx_rag_source_access_child
 -- Grant permissions to application role (after tables created)
 -- =============================================================================
 
+-- NOTE: Basic permissions are granted by 01_init_user.sh
+-- The following grants ensure permissions on the specific RAG tables
 GRANT SELECT, INSERT, UPDATE, DELETE ON rag_sources TO mcp_app;
 GRANT SELECT, INSERT, UPDATE, DELETE ON rag_chunks TO mcp_app;
 GRANT SELECT, INSERT, UPDATE, DELETE ON rag_source_access TO mcp_app;
+  GRANT USAGE, SELECT, UPDATE ON SEQUENCES TO mcp_app;
 
 -- Verify role hardening:
 -- SELECT rolname, rolbypassrls, rolsuper FROM pg_roles WHERE rolname = 'mcp_app';

@@ -69,11 +69,13 @@ The architecture follows a **"governance as constitutional layer"** principle:
 #### 1.2 Patent-Ready Innovations
 
 **Ghost Effect (Real-Time Inheritance Quarantine)**:
+
 - Parent governance rules (legal_hold, effective_from/to) checked BEFORE vector retrieval
 - Mathematically excludes quarantined content without re-indexing embeddings
 - Implemented in RLS policies at database level (impossible to bypass)
 
 **Stateless Actor Propagation**:
+
 - HMAC-bound signatures: `HMAC(actor_id:actor_type:workspace_id:timestamp)`
 - Timestamp-bound to prevent replay attacks (300s default window)
 - Workspace-scoped to prevent cross-tenant signature reuse
@@ -87,6 +89,7 @@ The architecture follows a **"governance as constitutional layer"** principle:
 #### 1.4 Architecture Gaps
 
 ⚠️ **Migration Path Complexity**:
+
 - Current implementation uses `workspace_id` as tenant boundary
 - Target architecture uses `families` table with additional domain entities
 - Migration requires careful coordination between RAG schema and domain backbone
@@ -102,7 +105,7 @@ The architecture follows a **"governance as constitutional layer"** principle:
 ### 2.1 Python Code Metrics
 
 | Metric | Value | Assessment |
-| ------ | ----- | ---------- |
+| --- | --- | --- |
 | Total Python Code | ~29.7 KB | ✅ Compact for feature set |
 | Core Module Lines | server.py: 1,556 / rag.py: 675 / auth.py: 181 | ✅ Well-factored |
 | Test Code Lines | ~1,200+ (9 test files) | ✅ Strong coverage |
@@ -181,11 +184,14 @@ The architecture follows a **"governance as constitutional layer"** principle:
 - **Recommendation**: Contribute type stubs to upstream or use mypy strict mode
 
 ##### Issue #5: Large Workspace File Count (5,674 files)
+
 te type stubs
+
 - Results in some `# type: ignore` comments
 - **Recommendation**: Contribute type stubs to upstream or use mypy strict mode
 
 **Issue #5: Large Workspace File Count** (5,674 files)
+
 - Likely includes `node_modules`, `__pycache__`, or build artifacts
 - **Recommendation**: Audit `.gitignore` and clean workspace
 
@@ -201,7 +207,7 @@ te type stubs
 
 ## 3. Security Posture
 
-### Overall Grade: **A+ (Exceptional)**
+### Security Grade: **A+ (Exceptional)**
 
 ### 3.1 Security Architecture
 
@@ -231,34 +237,35 @@ te type stubs
 
 ### 3.2 Security Validation Test Results
 
-| Test Suite | Status | Coverage |
-|------------|--------|----------|
-| Production Preflight | ✅ PASS | Config hardening |
-| RLS Fail-Closed | ⚠️ 4/6 PASS | Isolation enforcement |
-| Cross-Workspace Write | ✅ PASS | WITH CHECK validation |
-| Owner Bypass Prevention | ⏸️ SKIPPED | Requires DB owner credentials |
-| Focused Unit Tests | ✅ 47/47 PASS | Core logic |
-| Integration Tests | ✅ 4/4 PASS | End-to-end flows |
+| Test Suite              | Status        | Coverage                       |
+| ----------------------- | ------------- | ------------------------------ |
+| Production Preflight    | ✅ PASS       | Config hardening               |
+| RLS Fail-Closed         | ⚠️ 4/6 PASS   | Isolation enforcement          |
+| Cross-Workspace Write   | ✅ PASS       | WITH CHECK validation          |
+| Owner Bypass Prevention | ⏸️ SKIPPED    | Requires DB owner credentials  |
+| Focused Unit Tests      | ✅ 47/47 PASS | Core logic                     |
+| Integration Tests       | ✅ 4/4 PASS   | End-to-end flows               |
 
 **Total Test Pass Rate: 95.7%** (55/57 tests passing)
 
 ### 3.3 Threat Model Coverage
 
-| Threat | Mitigation | Status |
-|--------|------------|--------|
-| **SQL Injection** | Parameterized queries only | ✅ Complete |
-| **Cross-Tenant Data Leakage** | RLS + WITH CHECK policies | ✅ Complete |
-| **Privilege Escalation** | mcp_app role lacks BYPASSRLS | ✅ Complete |
-| **Replay Attacks** | Timestamp-bound signatures | ✅ Complete |
-| **API Key Leakage** | HMAC derivation prevents offline attack | ✅ Complete |
-| **Owner Bypass** | FORCE ROW LEVEL SECURITY | ⚠️ Untested (proof skipped) |
-| **Insider Threat** | Append-only audit_immutable | ✅ Complete |
-| **DoS via Rate Limiting** | Redis-backed distributed limits | ✅ Complete |
-| **Timeout Exhaustion** | 3-layer timeout defense | ✅ Complete |
+| Threat                        | Mitigation                              | Status                      |
+| ----------------------------- | --------------------------------------- | --------------------------- |
+| **SQL Injection**             | Parameterized queries only              | ✅ Complete                 |
+| **Cross-Tenant Data Leakage** | RLS + WITH CHECK policies               | ✅ Complete                 |
+| **Privilege Escalation**      | mcp_app role lacks BYPASSRLS            | ✅ Complete                 |
+| **Replay Attacks**            | Timestamp-bound signatures              | ✅ Complete                 |
+| **API Key Leakage**           | HMAC derivation prevents offline attack | ✅ Complete                 |
+| **Owner Bypass**              | FORCE ROW LEVEL SECURITY                | ⚠️ Untested (proof skipped) |
+| **Insider Threat**            | Append-only audit_immutable             | ✅ Complete                 |
+| **DoS via Rate Limiting**     | Redis-backed distributed limits         | ✅ Complete                 |
+| **Timeout Exhaustion**        | 3-layer timeout defense                 | ✅ Complete                 |
 
 ### 3.4 Security Recommendations
 
 🔴 **CRITICAL: Enable Owner-Bypass Validation**
+
 ```bash
 # Add to .env before go-live:
 RAG_DATABASE_OWNER_URL=postgresql://postgres:<password>@db:5432/notion_mcp
@@ -268,15 +275,18 @@ pytest test_production_security_proof.py::test_owner_bypass_is_dead -v -s
 ```
 
 🟡 **HIGH: Rotate Cloudflare Tunnel Token**
+
 - Documentation mentions potential token exposure during setup
 - Rotate if token was logged or shared outside operator channel
 
 🟢 **MEDIUM: Add Security Headers**
+
 - Consider `X-Content-Type-Options: nosniff`
 - Add `X-Frame-Options: DENY` for web UI endpoints
 - Set `Strict-Transport-Security` at reverse proxy layer
 
 🟢 **LOW: Implement CSP for Future Web UI**
+
 - Not needed for current MCP-only API server
 - Required if web dashboard added in future
 
@@ -288,7 +298,8 @@ pytest test_production_security_proof.py::test_owner_bypass_is_dead -v -s
 
 ### 4.1 Test Inventory
 
-**Total Tests: 57**
+#### Total Tests: 57
+
 - Focused/Unit Tests: 47
 - RLS Security Tests: 6
 - Production Security Proofs: 2
@@ -297,17 +308,17 @@ pytest test_production_security_proof.py::test_owner_bypass_is_dead -v -s
 
 ### 4.2 Test Coverage by Module
 
-| Module | Test File | Tests | Status |
-|--------|-----------|-------|--------|
-| server.py (Tools) | test_server.py | 47 | ✅ PASS |
-| auth.py (Workspace) | test_server.py (embedded) | Partial | ✅ PASS |
-| rag.py (RAG Core) | test_rag_*.py | 10+ | ✅ PASS |
-| RLS Policies | test_rls_fail_closed.py | 6 | ⚠️ 4/6 PASS |
-| Cross-Tenant Write | test_production_security_proof.py | 2 | ✅ 1 PASS, 1 SKIP |
-| Audit Threading | test_request_id_threading.py | 1 | ✅ PASS |
-| Session Context | test_rag_session_context.py | 2 | ✅ PASS |
-| Frontend BFF | test_frontend_bff.py | 5 | ✅ PASS |
-| Preflight | test_production_preflight.py | 3 | ✅ PASS |
+| Module              | Test File                         | Tests   | Status               |
+| ------------------- | --------------------------------- | ------- | -------------------- |
+| server.py (Tools)   | test_server.py                    | 47      | ✅ PASS              |
+| auth.py (Workspace) | test_server.py (embedded)         | Partial | ✅ PASS              |
+| rag.py (RAG Core)   | test_rag_*.py                     | 10+     | ✅ PASS              |
+| RLS Policies        | test_rls_fail_closed.py           | 6       | ⚠️ 4/6 PASS          |
+| Cross-Tenant Write  | test_production_security_proof.py | 2       | ✅ 1 PASS, 1 SKIP    |
+| Audit Threading     | test_request_id_threading.py      | 1       | ✅ PASS              |
+| Session Context     | test_rag_session_context.py       | 2       | ✅ PASS              |
+| Frontend BFF        | test_frontend_bff.py              | 5       | ✅ PASS              |
+| Preflight           | test_production_preflight.py      | 3       | ✅ PASS              |
 
 ### 4.3 Coverage Gaps
 
@@ -334,7 +345,8 @@ pytest test_production_security_proof.py::test_owner_bypass_is_dead -v -s
 
 ### 4.4 Test Quality Issues
 
-**Issue: Mock Function Signature Drift**
+#### Issue: Mock Function Signature Drift
+
 - Tests failed because mock doesn't match production signature
 - Indicates need for test maintenance on parameter additions
 - **Fix**: Use `**kwargs` in mocks or generate mocks from actual function signatures
@@ -345,11 +357,12 @@ pytest test_production_security_proof.py::test_owner_bypass_is_dead -v -s
 
 ## 5. Database Layer Assessment
 
-### Overall Grade: **A+ (Exceptional)**
+### Database Grade: **A+ (Exceptional)**
 
 ### 5.1 Schema Design
 
 **Strengths:**
+
 - ✅ Normalized structure (3NF compliance)
 - ✅ Proper foreign key constraints with CASCADE
 - ✅ Check constraints for status enums
@@ -373,6 +386,7 @@ rag_source_access: source_id, child_id, role
 ### 5.2 RLS Policy Analysis
 
 **Read Policies (Defense in Depth):**
+
 ```sql
 -- RLS enforces ALL governance rules, not just workspace_id
 WHERE workspace_id = current_setting('app.workspace_id')::uuid
@@ -383,6 +397,7 @@ WHERE workspace_id = current_setting('app.workspace_id')::uuid
 ```
 
 **Write Policies (Cross-Tenant Protection):**
+
 ```sql
 -- WITH CHECK prevents inserting data into other workspaces
 WITH CHECK (
@@ -391,6 +406,7 @@ WITH CHECK (
 ```
 
 **Critical Security Feature:**
+
 ```sql
 ALTER TABLE rag_sources FORCE ROW LEVEL SECURITY;
 -- Prevents table owner from bypassing RLS
@@ -399,10 +415,12 @@ ALTER TABLE rag_sources FORCE ROW LEVEL SECURITY;
 ### 5.3 Migration Strategy
 
 **Domain Backbone Migrations:**
+
 - `001_domain_backbone.sql`: Adds families, members, resources, events, audit_immutable
 - `002_assignments_and_secure_views.sql`: Adds assignment-driven authorization
 
 **Migration Safety:**
+
 - ✅ Migrations are additive (preserve existing RAG schema)
 - ✅ Compatibility bridge: `families.workspace_id` maps to current `workspace_id`
 - ⚠️ No rollback scripts provided
@@ -413,6 +431,7 @@ ALTER TABLE rag_sources FORCE ROW LEVEL SECURITY;
 ### 5.4 Index Strategy
 
 **Existing Indexes:**
+
 ```sql
 -- Governance filter hot path
 idx_rag_sources_workspace_status ON (workspace_id, status) WHERE legal_hold = FALSE
@@ -425,6 +444,7 @@ idx_rag_chunks_source_id ON (source_id)
 ```
 
 **Missing Indexes (Potential):**
+
 - Composite index on `(workspace_id, effective_from, effective_to)` for time-range queries
 - Partial index on `members.status = 'active'` for family roster queries
 
@@ -439,6 +459,7 @@ idx_rag_chunks_source_id ON (source_id)
 ### 6.1 Containerization
 
 **Docker Compose Architecture:**
+
 ```yaml
 services:
   mcp:      # FastAPI MCP server
@@ -451,6 +472,7 @@ networks:
 ```
 
 **Security Hardening:**
+
 - ✅ Multi-stage Dockerfile reduces image size
 - ✅ Non-root user (`mcp:mcp` UID/GID 1000)
 - ✅ Read-only filesystem with `/tmp` tmpfs
@@ -460,6 +482,7 @@ networks:
 - ✅ Healthcheck probes for both services
 
 **CVE Mitigation:**
+
 ```dockerfile
 # Explicit versions to address:
 # - CVE-2026-24049 (wheel 0.45.1)
@@ -472,12 +495,14 @@ setuptools==82.0.1
 ### 6.2 Production Deployment
 
 **Current Production Setup:**
+
 - Public URL: `https://mcp.tenantsage.org`
 - Tunnel: Cloudflare remote-managed tunnel (`notion-mcp-managed`)
 - Connector: Windows `cloudflared` service on operator host
 - Ingress: Cloudflare → `http://localhost:8080`
 
 **Deployment Checklist (PRODUCTION_VALIDATION.md):**
+
 1. ✅ Run `production_preflight.py --strict`
 2. ✅ Ensure Redis running if multi-instance (`REDIS_URL` set)
 3. ✅ Apply migrations before redeployment
@@ -487,6 +512,7 @@ setuptools==82.0.1
 ### 6.3 Configuration Management
 
 **Environment Variables (20+ settings):**
+
 - Authentication: `RAG_SERVER_SECRET`, `ACTOR_SIGNING_SECRET`, `RAG_API_KEYS`
 - Database: `RAG_DATABASE_URL`, `RAG_DATABASE_OWNER_URL` (optional)
 - Notion: `NOTION_TOKEN`, 4x database IDs
@@ -496,11 +522,13 @@ setuptools==82.0.1
 - Rate Limiting: `REQUESTS_PER_MINUTE`, `RATE_LIMIT_BURST`
 
 **Configuration Strengths:**
+
 - ✅ `.env.example` provided as template
 - ✅ `production_preflight.py` validates unsafe configs
 - ✅ Fail-closed defaults (strict mode fails if secrets missing)
 
 **Configuration Gaps:**
+
 - ⚠️ No secrets management integration (Vault, AWS Secrets Manager, etc.)
 - ⚠️ No configuration drift detection
 - ⚠️ API key rotation procedure not documented
@@ -508,12 +536,14 @@ setuptools==82.0.1
 ### 6.4 Observability
 
 **Logging:**
+
 - ✅ Structured logging with request ID correlation
 - ✅ Performance timing for slow operations (>100ms)
 - ✅ Log levels: INFO for operations, WARNING for config issues
 - ⚠️ No ELK/Splunk/Datadog integration documented
 
 **Monitoring:**
+
 - ✅ `/health` endpoint for readiness probes
 - ✅ Docker healthcheck configuration
 - ⚠️ No Prometheus metrics endpoint
@@ -521,6 +551,7 @@ setuptools==82.0.1
 - ⚠️ No SLA/SLO metrics tracked
 
 **Tracing:**
+
 - ✅ Request ID propagation via `contextvars`
 - ✅ Audit trail in `audit_immutable` table
 - ⚠️ No OpenTelemetry integration
@@ -531,12 +562,14 @@ setuptools==82.0.1
 **Status: MISSING** ❌
 
 **No CI/CD configuration found for:**
+
 - GitHub Actions workflows
 - GitLab CI pipelines
 - Jenkins pipelines
 - Azure Pipelines
 
 **Recommended Pipeline:**
+
 ```yaml
 # .github/workflows/ci.yml (MISSING)
 name: CI
@@ -564,20 +597,11 @@ jobs:
 
 ## 7. Documentation Quality
 
-### Overall Grade: **A (Excellent)**
+### Documentation Grade: **A (Excellent)**
 
 ### 7.1 Documentation Inventory
 
-| Document | Lines | Purpose | Quality |
-|----------|-------|---------|---------|
-| README.md | 150 | Proposal-level value prop | ✅ A+ |
-| RELEASE_NOTES.md | 200+ | Technical evolution | ✅ A |
-| ARCHITECTURE_ALIGNMENT.md | 200+ | Design decisions | ✅ A+ |
-| HARDENING.md | 150 | Security improvements | ✅ A |
-| PRODUCTION_VALIDATION.md | 150 | Deployment checklist | ✅ A |
-| CLIENT_INTEGRATION_MANUAL.md | 487 | Frontend integration | ✅ A |
-| GOVERNED_PATH_CHECKLIST.md | ? | Governance criteria | ✅ A |
-| ASSIGNMENT_RLS_MODEL.md | ? | Authorization model | ✅ A |
+| Document | Lines | Purpose | Quality |\n| -------- | ----- | ------- | ------- |\n| README.md | 150 | Proposal-level value prop | ✅ A+ |\n| RELEASE_NOTES.md | 200+ | Technical evolution | ✅ A |\n| ARCHITECTURE_ALIGNMENT.md | 200+ | Design decisions | ✅ A+ |\n| HARDENING.md | 150 | Security improvements | ✅ A |\n| PRODUCTION_VALIDATION.md | 150 | Deployment checklist | ✅ A |\n| CLIENT_INTEGRATION_MANUAL.md | 487 | Frontend integration | ✅ A |\n| GOVERNED_PATH_CHECKLIST.md | ? | Governance criteria | ✅ A |\n| ASSIGNMENT_RLS_MODEL.md | ? | Authorization model | ✅ A |
 
 **Total Documentation: 6,000+ lines** (estimated)
 
@@ -631,12 +655,14 @@ jobs:
 ### 7.4 Code Documentation
 
 **Inline Documentation Quality:**
+
 - ✅ Critical functions have detailed docstrings
 - ✅ Security-sensitive code has extensive comments
 - ✅ SQL queries include governance invariant comments
 - ⚠️ Some helper functions lack docstrings
 
 **Example of Excellent Documentation:**
+
 ```python
 """
 Execute sql inside a transaction with SET LOCAL app.workspace_id.
@@ -660,7 +686,8 @@ workspace_id : Server-resolved workspace UUID — never caller-supplied.
 ### 8.1 Dependency Analysis
 
 **requirements.txt (9 dependencies):**
-```
+
+```text
 python-dotenv       # Config management
 notion-client       # Notion API
 mcp                 # MCP protocol
@@ -677,22 +704,27 @@ redis>=5.0.0        # Optional: multi-instance rate limiting
 ### 8.2 Dependency Security
 
 **Strengths:**
+
 - ✅ Explicit version pins for security-critical packages (wheel, pip)
 - ✅ Dockerfile uses specific Python version (3.11.15)
 - ✅ Regular updates (pip 26.0.1, setuptools 82.0.1)
 
 **Vulnerabilities:**
+
 - ✅ CVE-2026-24049 (wheel 0.45.1): FIXED (wheel>=0.46.2)
 - ✅ CVE-2026-1703 (pip 24.0): FIXED (pip==26.0.1)
 - ✅ CVE-2025-8869 (pip): MITIGATED (Python 3.11.15)
 
 **Recommendations:**
+
 1. Add `pip-audit` to CI pipeline:
+
    ```bash
    pip-audit --desc
    ```
 
 2. Add Dependabot/Renovate for automated updates:
+
    ```yaml
    # .github/dependabot.yml (MISSING)
    version: 2
@@ -708,6 +740,7 @@ redis>=5.0.0        # Optional: multi-instance rate limiting
 ### 8.3 Dependency Licensing
 
 **Observed Licenses (typical for these packages):**
+
 - fastapi: MIT
 - uvicorn: BSD-3-Clause
 - psycopg2: LGPL (with static linking exception)
@@ -715,6 +748,7 @@ redis>=5.0.0        # Optional: multi-instance rate limiting
 - notion-client: MIT
 
 **Recommendation**: Add `pip-licenses` check to verify compatibility:
+
 ```bash
 pip install pip-licenses
 pip-licenses --summary
@@ -733,6 +767,7 @@ pip-licenses --summary
 **Status**: Test exists but SKIPPED (requires `RAG_DATABASE_OWNER_URL`)
 
 **Fix**:
+
 ```bash
 # Add to .env
 RAG_DATABASE_OWNER_URL=postgresql://postgres:<passwd>@db:5432/notion_mcp
@@ -752,6 +787,7 @@ pytest test_production_security_proof.py::test_owner_bypass_is_dead -v
 **Location**: `test_rls_fail_closed.py:_create_broken_run_scoped_query`
 
 **Fix**:
+
 ```python
 def broken_run_scoped_query(
     workspace_id, sql, params, *,
@@ -776,6 +812,7 @@ def broken_run_scoped_query(
 **Consequence**: Higher risk of regression, config errors reaching production
 
 **Recommendation**:
+
 - Add GitHub Actions workflow for PR validation
 - Run `production_preflight.py --strict` as gate
 - Block merge if tests fail or security vulnerabilities detected
@@ -788,6 +825,7 @@ def broken_run_scoped_query(
 **Consequence**: Extended downtime if database corruption or data loss occurs
 
 **Recommendation**:
+
 - Document `pg_dump` backup schedule
 - Test restore procedure quarterly
 - Define RTO (Recovery Time Objective) and RPO (Recovery Point Objective)
@@ -800,6 +838,7 @@ def broken_run_scoped_query(
 **Consequence**: Risk of service disruption during rotation
 
 **Recommendation**:
+
 - Support multiple active keys per workspace (already possible)
 - Document zero-downtime rotation procedure:
   1. Add new key to `RAG_API_KEYS`
@@ -829,6 +868,7 @@ def broken_run_scoped_query(
 ### 10.1 Immediate Action Items (This Week)
 
 🔴 **CRITICAL**:
+
 1. Fix test harness signature mismatch in `test_rls_fail_closed.py`
 2. Configure `RAG_DATABASE_OWNER_URL` and run owner-bypass proof
 3. Rotate Cloudflare tunnel token if potentially exposed during setup
@@ -841,32 +881,35 @@ def broken_run_scoped_query(
 ### 10.2 Short-Term Improvements (This Month)
 
 🟢 **MEDIUM**:
-7. Generate OpenAPI spec and publish to docs site
-8. Add migration rollback scripts (`migrations/rollback/`)
-9. Implement automated backup testing (weekly restore drill)
-10. Add Prometheus metrics endpoint (`/metrics`)
-11. Clean workspace (audit `.gitignore`, remove build artifacts)
-12. Pin all transitive dependencies (`pip freeze > requirements.lock`)
+
+1. Generate OpenAPI spec and publish to docs site
+2. Add migration rollback scripts (`migrations/rollback/`)
+3. Implement automated backup testing (weekly restore drill)
+4. Add Prometheus metrics endpoint (`/metrics`)
+5. Clean workspace (audit `.gitignore`, remove build artifacts)
+6. Pin all transitive dependencies (`pip freeze > requirements.lock`)
 
 ### 10.3 Long-Term Strategic Items (This Quarter)
 
 📋 **Strategic**:
-13. Add OpenTelemetry distributed tracing
-14. Implement secrets management (HashiCorp Vault or AWS Secrets Manager)
-15. Add mutation testing (`mutmut`) to verify test effectiveness
-16. Performance benchmarking suite (vector search latency, throughput)
-17. Disaster recovery runbook with quarterly drills
-18. Multi-region deployment architecture (if global scale needed)
-19. Automated compliance reporting (SOC 2, GDPR evidence extraction)
+
+1. Add OpenTelemetry distributed tracing
+2. Implement secrets management (HashiCorp Vault or AWS Secrets Manager)
+3. Add mutation testing (`mutmut`) to verify test effectiveness
+4. Performance benchmarking suite (vector search latency, throughput)
+5. Disaster recovery runbook with quarterly drills
+6. Multi-region deployment architecture (if global scale needed)
+7. Automated compliance reporting (SOC 2, GDPR evidence extraction)
 
 ### 10.4 Technical Debt Backlog
 
 📝 **Debt Items**:
-20. Refactor rate limiter into separate module (currently in `server.py`)
-21. Extract all environment variable defaults to config dataclass
-22. Add integration tests for migration scripts
-23. Generate SQL migration from schema diff (e.g., `migra`)
-24. Add request tracing visualization (Jaeger or Zipkin)
+
+1. Refactor rate limiter into separate module (currently in `server.py`)
+2. Extract all environment variable defaults to config dataclass
+3. Add integration tests for migration scripts
+4. Generate SQL migration from schema diff (e.g., `migra`)
+5. Add request tracing visualization (Jaeger or Zipkin)
 
 ---
 
@@ -876,7 +919,8 @@ def broken_run_scoped_query(
 
 This codebase represents **exceptional engineering quality** for a governance-focused MCP server. The architecture demonstrates **patent-worthy innovations** (Ghost Effect), **defense-in-depth security** (RLS + HMAC + actor signing), and **production-grade hardening** (preflight validation, audit immutability).
 
-### Strengths Summary:
+### Strengths Summary
+
 - ✅ Database-enforced security model (impossible to bypass)
 - ✅ Comprehensive test coverage (57 tests, 95.7% pass rate)
 - ✅ Excellent documentation (6,000+ lines)
@@ -884,29 +928,32 @@ This codebase represents **exceptional engineering quality** for a governance-fo
 - ✅ Thoughtful architecture with clear upgrade path
 - ✅ Security-first design (fail-closed, append-only audit)
 
-### Critical Gaps:
+### Critical Gaps
+
 - ⚠️ 2 test failures (mock signature drift, not production bugs)
 - ⚠️ Owner-bypass test skipped (needs DB owner credentials)
 - ⚠️ No CI/CD pipeline (manual testing only)
 - ⚠️ Missing disaster recovery procedures
 
-### Recommended Deployment Status:
+### Recommended Deployment Status
 
 **Current Production Deployment**: ✅ **ACCEPTABLE**
+
 - Already live with operational experience
 - Critical security mechanisms validated
 - Known issues are test-only or documentation gaps
 
 **For New Production Deployments**: ⚠️ **ACCEPTABLE WITH CONDITIONS**
+
 - Fix test harness signature drift first
 - Run owner-bypass proof before go-live
 - Add CI/CD pipeline within 30 days
 - Document disaster recovery within 60 days
 
-### Score Summary:
+### Score Summary
 
 | Category | Grade | Weight | Weighted |
-|----------|-------|--------|----------|
+| --- | --- | --- | --- |
 | Architecture | A+ | 20% | 20.0 |
 | Code Quality | A | 15% | 15.0 |
 | Security | A+ | 25% | 25.0 |
@@ -916,7 +963,7 @@ This codebase represents **exceptional engineering quality** for a governance-fo
 | Dependencies | B+ | 5% | 4.25 |
 | **OVERALL** | **A** | **100%** | **96.25** |
 
-### Final Recommendation:
+### Final Recommendation
 
 **APPROVE FOR PRODUCTION USE** with the understanding that the technical debt backlog should be addressed over the next quarter. The identified issues are **non-blocking** for production operation but should be resolved to maintain engineering excellence and operational safety.
 
@@ -931,7 +978,7 @@ This codebase represents **exceptional engineering quality** for a governance-fo
 
 ## Appendix A: Test Execution Summary
 
-```
+```text
 Test Execution Report (April 7, 2026)
 =====================================
 
@@ -962,7 +1009,7 @@ Operational Pass Rate: 100% (all production code validated)
 
 ## Appendix B: Security Validation Checklist
 
-```
+```text
 Security Hardening Checklist
 ============================
 
@@ -1023,4 +1070,4 @@ docker compose logs -f --tail=100 mcp
 
 ---
 
-**END OF REPORT**
+## END OF REPORT

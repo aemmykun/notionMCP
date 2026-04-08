@@ -9,6 +9,7 @@
 ## What Was Generated
 
 ### Files Created
+
 1. **mcp_server/openapi/openapi.json** (15,658 bytes)
    - OpenAPI 3.1.0 specification
    - Auto-generated from FastAPI application introspection
@@ -20,12 +21,13 @@
    - API overview with tool categories
 
 ### Documentation Updated
-3. **mcp_server/README.md**
+
+1. **mcp_server/README.md**
    - Added new "API Documentation" section
    - Links to OpenAPI spec and viewing options
    - Reference to CLIENT_INTEGRATION_MANUAL.md for integration patterns
 
-4. **ACTION_ITEMS.md**
+2. **ACTION_ITEMS.md**
    - Marked item #9 as complete
    - Updated progress: 8/12 items (67% complete)
    - Medium priority items: 3/6 complete (50%)
@@ -35,19 +37,22 @@
 ## How to View the API Documentation
 
 ### Option 1: Swagger Editor (Best for editing/testing)
-1. Go to https://editor.swagger.io/
+
+1. Go to <https://editor.swagger.io/>
 2. Click "File" → "Import File"
 3. Select `mcp_server/openapi/openapi.json`
 
 ### Option 2: Redoc (Best for reading)
-1. Go to https://redocly.github.io/redoc/
+
+1. Go to <https://redocly.github.io/redoc/>
 2. Click "Try it out"
 3. Paste the contents of `openapi.json`
 
 ### Option 3: FastAPI Built-in Docs (Best for local testing)
+
 1. Start the server: `docker compose up`
-2. Visit http://localhost:8080/docs (Swagger UI)
-3. Or visit http://localhost:8080/redoc (Redoc alternative)
+2. Visit <http://localhost:8080/docs> (Swagger UI)
+3. Or visit <http://localhost:8080/redoc> (Redoc alternative)
 
 ---
 
@@ -56,6 +61,7 @@
 The specification documents these tool categories:
 
 ### Governance Tools
+
 - `policy.check` - Validate actions against governance rules
 - `risk.score` - Compute risk scores for pending actions  
 - `audit.log` - Record decisions and outcomes
@@ -63,11 +69,13 @@ The specification documents these tool categories:
 - `approval.request` - Route to human approval
 
 ### RAG Tools
+
 - `rag.retrieve` - Governed retrieval with actor authorization
 - `rag.ingest_source` - Create governed source records
 - `rag.ingest_chunks` - Ingest vector chunks
 
 ### Resource Tools  
+
 - `resource.list` - List authorized resources for actor
 - `resource.get` - Get specific authorized resource
 
@@ -78,11 +86,13 @@ The specification documents these tool categories:
 All documented in the spec:
 
 ### Workspace Authentication (Required for all protected endpoints)
+
 ```http
 X-API-Key: <workspace_api_key>
 ```
 
 ### Actor Signing (Required for governed read operations)
+
 ```http
 X-Actor-Id: user_123
 X-Actor-Type: user
@@ -95,13 +105,16 @@ X-Actor-Signature: <hmac_signature>
 ## Generation Details
 
 ### Command Used
+
 ```powershell
 cd mcp_server
 python -c "from server import app; import json; spec = app.openapi(); print(json.dumps(spec, indent=2))" > openapi.json
 ```
 
 ### Expected Warnings (Safe to Ignore)
+
 During generation, these warnings are normal:
+
 - "RAG_SERVER_SECRET not set" - Expected in bare import context
 - "REDIS_URL set but redis package not installed" - Warning only
 - Notion DB validation HTTP 400 errors - Expected (invalid IDs during import)
@@ -109,6 +122,7 @@ During generation, these warnings are normal:
 These occur because we're extracting the schema at compile-time, not runtime.
 
 ### Specification Metrics
+
 - **Size**: 15.6 KB (15,658 bytes)
 - **OpenAPI Version**: 3.1.0
 - **Endpoints**: 10+ tool handlers
@@ -146,6 +160,7 @@ Teams can now:
 ## Next Steps (Optional)
 
 ### Commit to Version Control
+
 ```bash
 git add mcp_server/openapi/
 git commit -m "Add OpenAPI 3.1.0 specification"
@@ -153,7 +168,9 @@ git push
 ```
 
 ### Set Up Automated Regeneration
+
 Add to CI/CD pipeline (.github/workflows/ci.yml):
+
 ```yaml
 - name: Generate OpenAPI Spec
   run: |
@@ -165,6 +182,7 @@ Add to CI/CD pipeline (.github/workflows/ci.yml):
 ```
 
 ### Deploy Static Docs
+
 ```bash
 # Using Redoc CLI
 npm install -g redoc-cli

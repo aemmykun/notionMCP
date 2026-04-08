@@ -29,7 +29,7 @@ A **governance-first MCP (Model Context Protocol) server** that sits between AI 
 ### Production Status: ✅ **APPROVED**
 
 | Category | Grade | Key Findings |
-|----------|-------|--------------|
+| --- | --- | --- |
 | **Architecture** | A+ | Patent-worthy design (Ghost Effect quarantine) |
 | **Security** | A+ | Database-enforced isolation, impossible to bypass |
 | **Code Quality** | A | Well-factored, type-hinted, maintainable |
@@ -53,6 +53,7 @@ A **governance-first MCP (Model Context Protocol) server** that sits between AI 
 ### 2. Patent-Ready Innovations ⭐
 
 **Ghost Effect (Real-Time Inheritance Quarantine)**:
+
 - Parent governance (legal-hold, effective dates) checked BEFORE vector retrieval
 - Excludes quarantined content without re-indexing embeddings
 - Implemented at database level (impossible to bypass via app code)
@@ -74,6 +75,7 @@ A **governance-first MCP (Model Context Protocol) server** that sits between AI 
 ### Issues Requiring Immediate Action
 
 #### 1. Test Harness Signature Drift (Medium Priority) ⚠️
+
 - **What**: 2 RLS tests fail because mock function doesn't match production signature
 - **Impact**: Test suite shows failures, but production code is correct
 - **Root Cause**: Tests not updated when `timeout_ms`, `actor_id` parameters added
@@ -81,6 +83,7 @@ A **governance-first MCP (Model Context Protocol) server** that sits between AI 
 - **Production Impact**: NONE (tests only)
 
 #### 2. Owner-Bypass Test Skipped (High Priority) ⚠️
+
 - **What**: Cannot verify table owner can't bypass RLS
 - **Why**: Test requires `RAG_DATABASE_OWNER_URL` with postgres credentials
 - **Risk**: If `FORCE ROW LEVEL SECURITY` isn't actually working, DBA could leak data
@@ -88,6 +91,7 @@ A **governance-first MCP (Model Context Protocol) server** that sits between AI 
 - **Production Impact**: LOW (RLS code is correct, just needs validation)
 
 #### 3. No CI/CD Pipeline (Medium Priority) 📋
+
 - **What**: No GitHub Actions, GitLab CI, or automated testing
 - **Impact**: Manual testing before every deploy (human error risk)
 - **Fix Time**: 2-4 hours (template provided in full report)
@@ -123,7 +127,7 @@ The codebase enforces these architectural invariants:
 
 ### Multi-Tenant Isolation Model
 
-```
+```text
 ┌─────────────────────────────────────────┐
 │  API Key (untrusted client input)      │
 └────────────────┬────────────────────────┘
@@ -151,7 +155,7 @@ The codebase enforces these architectural invariants:
 ## Test Coverage Summary
 
 | Test Suite | Tests | Status | Critical? |
-|------------|-------|--------|-----------|
+| --- | --- | --- | --- |
 | Focused Unit Tests | 47 | ✅ All Pass | ✅ Yes |
 | Cross-Workspace Write | 1 | ✅ Pass | ✅ Yes |
 | RLS Fail-Closed | 6 | ⚠️ 4 Pass, 2 Fail | ❌ No (test bugs) |
@@ -169,7 +173,7 @@ The codebase enforces these architectural invariants:
 ### Threat Model Coverage
 
 | Threat Vector | Mitigation | Status |
-|---------------|------------|--------|
+| --- | --- | --- |
 | SQL Injection | Parameterized queries only | ✅ Complete |
 | Cross-Tenant Leakage | RLS + WITH CHECK | ✅ Validated |
 | Privilege Escalation | mcp_app lacks BYPASSRLS | ✅ Validated |
@@ -187,7 +191,7 @@ The codebase enforces these architectural invariants:
 
 ### Current Production Setup
 
-```
+```text
 Internet
    ↓
 Cloudflare Tunnel (notion-mcp-managed)
@@ -201,6 +205,7 @@ Docker Compose
 ```
 
 **Security Hardening**:
+
 - ✅ Non-root container user (UID 1000)
 - ✅ Read-only filesystem
 - ✅ All Linux capabilities dropped
@@ -216,12 +221,14 @@ Docker Compose
 ### Critical (This Week)
 
 1. **Fix test harness signature mismatch** (30 min)
+
    ```bash
    # Edit test_rls_fail_closed.py:_create_broken_run_scoped_query
    # Add: timeout_ms=None, actor_id=None, actor_type=None, request_id=None
    ```
 
 2. **Run owner-bypass validation** (10 min)
+
    ```bash
    export RAG_DATABASE_OWNER_URL="postgresql://postgres:<pass>@db:5432/notion_mcp"
    pytest test_production_security_proof.py::test_owner_bypass_is_dead -v
@@ -231,16 +238,16 @@ Docker Compose
 
 ### High Priority (This Month)
 
-4. **Add CI/CD pipeline** (GitHub Actions template provided in full report)
-5. **Document API key rotation procedure**
-6. **Export OpenAPI spec** (`python -m fastapi.openapi > openapi.json`)
+1. **Add CI/CD pipeline** (GitHub Actions template provided in full report)
+2. **Document API key rotation procedure**
+3. **Export OpenAPI spec** (`python -m fastapi.openapi > openapi.json`)
 
 ### Medium Priority (This Quarter)
 
-7. **Disaster recovery runbook** (pg_dump + restore procedures)
-8. **Add Prometheus metrics endpoint** (`/metrics`)
-9. **Implement secrets management** (Vault or AWS Secrets Manager)
-10. **Performance benchmarking suite** (vector search latency)
+1. **Disaster recovery runbook** (pg_dump + restore procedures)
+2. **Add Prometheus metrics endpoint** (`/metrics`)
+3. **Implement secrets management** (Vault or AWS Secrets Manager)
+4. **Performance benchmarking suite** (vector search latency)
 
 ---
 
@@ -249,7 +256,7 @@ Docker Compose
 **Estimated Engineering Time to Clear Critical Issues**: 4 hours
 
 | Item | Time | Priority |
-|------|------|----------|
+| --- | --- | --- |
 | Fix test harness | 30 min | Critical |
 | Run owner-bypass test | 10 min | Critical |
 | Add CI/CD pipeline | 2-3 hours | High |
@@ -266,18 +273,22 @@ Docker Compose
 This codebase enables these buyer promises:
 
 ✅ **"AI never acts outside defined policy"**
+
 - Policy engine with deterministic rule evaluation
 - Approval routing for high-risk actions
 
 ✅ **"Evidence exists for every decision"**
+
 - Append-only audit trail
 - Request ID correlation across multi-tool workflows
 
 ✅ **"Access to data is authorized, not assumed"**
+
 - Assignment-driven authorization
 - Signed actor headers with HMAC verification
 
 ✅ **"Production exposure is operator-controlled"**
+
 - Cloudflare tunnel for secure ingress
 - Internal-only database networking
 
@@ -295,12 +306,14 @@ This codebase enables these buyer promises:
 ### Go/No-Go Decision: **GO** ✅
 
 **Rationale**:
+
 - System is already in production and operational
 - Security architecture is exceptional (A+ grade)
 - Known issues are test-only or documentation gaps
 - No blocking defects in production code
 
 **Conditions**:
+
 - Fix test harness within 7 days
 - Run owner-bypass validation before next deploy
 - Add CI/CD pipeline within 30 days
@@ -309,16 +322,19 @@ This codebase enables these buyer promises:
 ### Risk Assessment: **LOW TO MEDIUM**
 
 **Technical Risk**: ⬇️ LOW
+
 - Production code is well-tested and hardened
 - No critical security vulnerabilities found
 - Architecture supports scale and evolution
 
 **Operational Risk**: ⚠️ MEDIUM
+
 - No automated CI/CD (manual testing risk)
 - Missing disaster recovery procedures
 - Single-person knowledge concentration (implied)
 
 **Business Risk**: ⬇️ LOW
+
 - Architecture is sellable (governance-first positioning)
 - Patent-worthy innovations (Ghost Effect)
 - Clear upgrade path to advanced features
@@ -332,6 +348,7 @@ This codebase enables these buyer promises:
 **Next Review Date**: July 7, 2026
 
 **Review Triggers** (schedule sooner if):
+
 - Security vulnerability in dependencies
 - Production incident or data breach
 - Major architecture change (e.g., multi-region)

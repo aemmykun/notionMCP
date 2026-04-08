@@ -205,7 +205,7 @@ docker compose exec db psql -U postgres -c "DROP DATABASE notion_mcp_restore_tes
 #### Severity Levels
 
 | Level | Definition | Response Time | Examples |
-|-------|------------|---------------|----------|
+| ------- | ------------ | --------------- | ---------- |
 | **SEV-1** (Critical) | Service completely down, data loss risk | 15 minutes | Database offline, total service outage, RLS bypass discovered |
 | **SEV-2** (High) | Degraded performance, partial outage | 1 hour | Slow queries, tunnel intermittent, authentication failures |
 | **SEV-3** (Medium) | Minor issues, workaround available | 4 hours | Single endpoint errors, logging issues |
@@ -490,7 +490,7 @@ curl https://mcp.tenantsage.org/health
 #### On-Call Rotation
 
 | Role | Primary | Backup | Contact Method |
-|------|---------|--------|----------------|
+| --- | --- | --- | --- |
 | **L1 - On-call Engineer** | [Name] | [Name] | PagerDuty, Slack @username, +1-XXX-XXX-XXXX |
 | **L2 - Platform Lead** | [Name] | [Name] | PagerDuty escalation, Slack @username, +1-XXX-XXX-XXXX |
 | **L3 - Engineering Manager** | [Name] | [Name] | Email, Slack @username, +1-XXX-XXX-XXXX |
@@ -498,7 +498,7 @@ curl https://mcp.tenantsage.org/health
 
 #### Escalation Path
 
-```
+```text
 SEV-4 (Low) → L1 resolves during business hours
 SEV-3 (Medium) → L1 investigates, may consult L2
 SEV-2 (High) → L1 leads, L2 assists, notify L3 if > 2 hours
@@ -508,7 +508,7 @@ SEV-1 (Critical) → Page L1 + L2 immediately, brief L3 within 30 min
 #### Communication Channels
 
 | Channel | Purpose | SEV-1 | SEV-2 | SEV-3/4 |
-|---------|---------|-------|-------|---------|
+| --- | --- | --- | --- | --- |
 | **#incidents** (Slack) | Real-time incident coordination | Required | Required | Optional |
 | **#mcp-alerts** (Slack) | Automated monitoring alerts | Auto | Auto | Auto |
 | **Status Page** | External customer communication | Update every 30 min | Update hourly | Not required |
@@ -528,8 +528,9 @@ The first responder becomes the **Incident Commander** until resolved or explici
 
 #### Communication Templates
 
-**SEV-1 Initial Alert (Slack #incidents)**
-```
+##### SEV-1 Initial Alert (Slack #incidents)
+
+```text
 🚨 [SEV-1] MCP Service Down - INVESTIGATING
 
 Impact: Complete service outage, all API requests failing
@@ -546,8 +547,9 @@ Initial Actions:
 Next Update: HH:MM UTC
 ```
 
-**SEV-1 Resolution (Slack #incidents + Email)**
-```
+##### SEV-1 Resolution (Slack #incidents + Email)
+
+```text
 ✅ [RESOLVED] SEV-1 MCP Service Down
 
 Impact: Complete service outage
@@ -564,10 +566,10 @@ Post-Mortem: Scheduled for [date]
 #### Vendor Contacts
 
 | Vendor | Service | Support Portal | Emergency Contact |
-|--------|---------|----------------|-------------------|
-| **Cloudflare** | Tunnel | https://dash.cloudflare.com/support | Enterprise support ticket |
-| **PostgreSQL Community** | Database | https://www.postgresql.org/support/ | Community forums |
-| **Docker** | Container Platform | https://www.docker.com/support/ | Community forums |
+| --- | --- | --- | --- |
+| **Cloudflare** | Tunnel | <https://dash.cloudflare.com/support> | Enterprise support ticket |
+| **PostgreSQL Community** | Database | <https://www.postgresql.org/support/> | Community forums |
+| **Docker** | Container Platform | <https://www.docker.com/support/> | Community forums |
 
 ---
 

@@ -1,4 +1,7 @@
+# Pull Request
+
 ## Description
+
 <!-- Briefly describe what this PR does -->
 
 ## Type of Change
@@ -17,6 +20,7 @@
 Closes #
 
 ## Testing
+
 <!-- Describe the tests you ran to verify your changes -->
 
 - [ ] All existing tests pass locally
@@ -25,6 +29,7 @@ Closes #
 - [ ] Tested with database (if applicable)
 
 ### Test Commands Run
+
 ```bash
 # Example:
 pytest test_server.py -v
@@ -78,10 +83,9 @@ python production_preflight.py --strict
 ## Rollback Plan
 <!-- How can this change be rolled back if needed? -->
 
-
 ## Additional Notes
-<!-- Any other information reviewers should know -->
 
+<!-- Any other information reviewers should know -->
 
 ---
 

@@ -9,16 +9,18 @@
 ## ✅ Completed Items
 
 ### Critical Priority
+
 - [x] **Update Cloudflare Tunnel Token** (Completed: April 8, 2026)
   - User manually refreshed and updated the tunnel
   - Service verified operational
-  
-- [x] **Fix Test Harness Signature Mismatch** (Completed: April 8, 2026) 
+
+- [x] **Fix Test Harness Signature Mismatch** (Completed: April 8, 2026)
   - Added missing parameters to `_create_broken_run_scoped_query`
   - Parameters: `timeout_ms`, `actor_id`, `actor_type`, `request_id`
   - Tests now skip gracefully when DB not configured
 
 ### High Priority
+
 - [x] **Create CI/CD Pipeline** (Completed: April 8, 2026)
   - Created `.github/workflows/ci.yml`
   - Includes: test suite, security scans, preflight checks, Docker build
@@ -33,7 +35,8 @@
   - Created `install_security_tools.ps1` installer
   - Integrated pip-audit, bandit, and safety
 
-### Medium Priority
+### Medium (Completed)
+
 - [x] **Pin All Dependencies** (Completed: April 8, 2026)
   - Generated `requirements.lock` with all transitive dependencies
   - Ensures reproducible builds
@@ -46,7 +49,8 @@
 
 ## ⏳ Pending Items
 
-### Critical Priority
+### Critical (Pending)
+
 - [ ] **Run Owner-Bypass Validation Test**
   - **Status**: Waiting for DB owner credentials
   - **Action Required**: Set `RAG_DATABASE_OWNER_URL` in `.env`
@@ -54,7 +58,8 @@
   - **Time Estimate**: 10 minutes
   - **Blocker**: Needs postgres owner password
 
-### Medium Priority  
+### Medium (Pending)
+
 - [x] **Export OpenAPI Specification** ✅ (Completed: April 8, 2026)
   - **Status**: COMPLETE
   - **Action**: Generated OpenAPI 3.1.0 spec (15,658 bytes)
@@ -84,29 +89,31 @@
 
 | Priority Level | Total | Completed | Pending | % Complete |
 |----------------|-------|-----------|---------|------------|
-| Critical | 3 | 2 | 1 | 67% |
-| High | 3 | 3 | 0 | 100% |
-| Medium | 6 | 4 | 2 | 67% |
-| **TOTAL** | **12** | **9** | **3** | **75%** |
+| Critical       | 3     | 2         | 1       | 67%        |
+| High           | 3     | 3         | 0       | 100%       |
+| Medium         | 6     | 4         | 2       | 67%        |
+| **TOTAL**      | **12**| **9**     | **3**   | **75%**    |
 
 ---
 
 ## 🎯 Next Actions
 
 ### Today (10 minutes)
+
 1. Set `RAG_DATABASE_OWNER_URL` in `.env` with postgres owner credentials
 2. Run owner-bypass validation test
 3. Mark as complete if passes
 
 ### This Week (1.5 hours)
-4. Update .gitignore and clean workspace (preview first!)
-5. Add disaster recovery contact info to OPERATIONS.md
+
+1. Update .gitignore and clean workspace (preview first!)
+2. Add disaster recovery contact info to OPERATIONS.md
 
 ### This Month (1.5 hours)
-7. Add Prometheus metrics endpoint
-6. Add Prometheus metrics endpoint
-7. Create monitoring dashboard (Grafana or similar)
-8
+
+1. Add Prometheus metrics endpoint
+2. Create monitoring dashboard (Grafana or similar)
+
 ---
 
 ## 🚀 Major Wins
@@ -123,6 +130,7 @@
 ## 📝 Notes
 
 ### CI/CD Pipeline Features
+
 - Runs on every push and PR
 - PostgreSQL service for integration tests
 - Security scans (pip-audit, bandit, safety)
@@ -130,11 +138,14 @@
 - Docker build verification
 
 ### Dependencies Locked
+
 All transitive dependencies pinned in `requirements.lock`:
+
 - Use for production deployments: `pip install -r requirements.lock`
 - Use `requirements.txt` for development (allows updates)
 
 ### Tunnel Token Rotation
+
 Successfully completed without downtime. Service remained operational throughout update.
 
 ---

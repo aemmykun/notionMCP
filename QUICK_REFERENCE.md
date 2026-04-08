@@ -3,6 +3,7 @@
 ## 🚀 Daily Operations
 
 ### Check Service Health
+
 ```powershell
 # Local health
 curl.exe http://127.0.0.1:8080/health
@@ -16,6 +17,7 @@ docker compose ps
 ```
 
 ### View Logs
+
 ```powershell
 # Last 100 lines
 docker compose logs mcp --tail=100
@@ -28,6 +30,7 @@ docker compose logs mcp | Select-String "ERROR|CRITICAL"
 ```
 
 ### Restart Services
+
 ```powershell
 # Restart MCP only
 docker compose restart mcp
@@ -44,6 +47,7 @@ docker compose up -d --build
 ## 🔐 Security Operations
 
 ### Run Security Scan
+
 ```powershell
 cd mcp_server
 .\venv\Scripts\Activate.ps1
@@ -59,12 +63,14 @@ python security_scan.py --fail-on-high
 ```
 
 ### Production Preflight Check
+
 ```powershell
 cd mcp_server
 python production_preflight.py --strict
 ```
 
 ### Check Cloudflare Tunnel
+
 ```powershell
 # Service status
 Get-Service cloudflared
@@ -78,6 +84,7 @@ Get-EventLog -LogName Application -Source cloudflared -Newest 5
 ## 🧪 Testing
 
 ### Run All Tests
+
 ```powershell
 cd mcp_server
 .\venv\Scripts\Activate.ps1
@@ -85,6 +92,7 @@ pytest -v
 ```
 
 ### Run Specific Test Suites
+
 ```powershell
 # Unit tests only
 pytest test_server.py -v
@@ -100,6 +108,7 @@ pytest test_server.py test_production_preflight.py -q
 ```
 
 ### Code Coverage
+
 ```powershell
 pytest --cov=. --cov-report=html
 # Open htmlcov/index.html
@@ -110,12 +119,14 @@ pytest --cov=. --cov-report=html
 ## 💾 Backup & Restore
 
 ### Manual Backup
+
 ```powershell
 $timestamp = Get-Date -Format "yyyyMMdd_HHmmss"
 docker compose exec -T db pg_dump -U postgres notion_mcp > "backup_$timestamp.sql"
 ```
 
 ### Quick Restore (⚠️ OVERWRITES DATA)
+
 ```powershell
 # Stop app
 docker compose stop mcp
@@ -132,6 +143,7 @@ docker compose start mcp
 ## 🔑 API Key Management
 
 ### Generate New Key
+
 ```powershell
 cd mcp_server
 python generate_api_key.py "workspace-name"
@@ -142,6 +154,7 @@ python generate_api_key.py "workspace-name"
 ```
 
 ### Rotate Key (Zero Downtime)
+
 ```powershell
 # 1. Add new key to .env (keep old)
 # RAG_API_KEYS=old_hmac:uuid,new_hmac:uuid
@@ -161,6 +174,7 @@ docker compose restart mcp
 ## 📊 Monitoring
 
 ### Database Status
+
 ```powershell
 # Connection test
 docker compose exec db pg_isready -U postgres
@@ -175,6 +189,7 @@ UNION ALL SELECT
 ```
 
 ### Resource Usage
+
 ```powershell
 # Container stats
 docker stats notionmcp-mcp-1 notionmcp-db-1 --no-stream
@@ -188,6 +203,7 @@ docker system df
 ## 🛠️ Troubleshooting
 
 ### Service Won't Start
+
 ```powershell
 # 1. Check logs
 docker compose logs mcp --tail=50
@@ -200,6 +216,7 @@ Test-NetConnection -ComputerName localhost -Port 8080
 ```
 
 ### Database Connection Failed
+
 ```powershell
 # 1. Is DB healthy?
 docker compose exec db pg_isready -U postgres
@@ -213,6 +230,7 @@ print('✅ Connection OK')
 ```
 
 ### Tunnel Not Working
+
 ```powershell
 # 1. Check service
 Get-Service cloudflared
@@ -232,6 +250,7 @@ curl.exe https://mcp.tenantsage.org/health
 ## 🚨 Emergency Procedures
 
 ### Immediate Rollback
+
 ```powershell
 # 1. Stop current version
 docker compose down
@@ -244,6 +263,7 @@ docker compose up -d
 ```
 
 ### Clear Cache and Rebuild
+
 ```powershell
 # Nuclear option - full rebuild
 docker compose down -v
@@ -259,7 +279,7 @@ curl.exe https://mcp.tenantsage.org/health
 ## 📞 Quick Contacts
 
 | Issue Type | Action |
-|------------|--------|
+| --- | --- |
 | Service Down | Check health, view logs, restart |
 | Database Issues | Run pg_isready, check logs |
 | Tunnel Issues | Restart cloudflared service |
