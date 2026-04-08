@@ -141,7 +141,7 @@ CREATE INDEX IF NOT EXISTS idx_rag_source_access_child
 GRANT SELECT, INSERT, UPDATE, DELETE ON rag_sources TO mcp_app;
 GRANT SELECT, INSERT, UPDATE, DELETE ON rag_chunks TO mcp_app;
 GRANT SELECT, INSERT, UPDATE, DELETE ON rag_source_access TO mcp_app;
-  GRANT USAGE, SELECT, UPDATE ON SEQUENCES TO mcp_app;
+GRANT USAGE, SELECT, UPDATE ON ALL SEQUENCES IN SCHEMA public TO mcp_app;
 
 -- Verify role hardening:
 -- SELECT rolname, rolbypassrls, rolsuper FROM pg_roles WHERE rolname = 'mcp_app';

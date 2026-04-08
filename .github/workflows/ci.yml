@@ -47,14 +47,30 @@ jobs:
           pip install -r requirements.txt
           pip install pytest pytest-cov
       
+      - name: Wait for Postgres
+        run: |
+          for i in {1..30}; do
+            pg_isready -h localhost -p 5432 -U postgres -d notion_mcp_test && exit 0
+            sleep 2
+          done
+          echo "Postgres did not become ready in time"
+          exit 1
+      
       - name: Apply database schema
         working-directory: mcp_server
         env:
           PGPASSWORD: test_password
         run: |
-          psql -h localhost -U postgres -d notion_mcp_test -f schema.sql
-          psql -h localhost -U postgres -d notion_mcp_test -f migrations/001_domain_backbone.sql
-          psql -h localhost -U postgres -d notion_mcp_test -f migrations/002_assignments_and_secure_views.sql
+          psql -h localhost -U postgres -d notion_mcp_test -v ON_ERROR_STOP=1 -f schema.sql
+          psql -h localhost -U postgres -d notion_mcp_test -v ON_ERROR_STOP=1 -f migrations/001_domain_backbone.sql
+          psql -h localhost -U postgres -d notion_mcp_test -v ON_ERROR_STOP=1 -f migrations/002_assignments_and_secure_views.sql
+      
+      - name: Validate schema smoke test
+        working-directory: mcp_server
+        env:
+          PGPASSWORD: test_password
+        run: |
+          psql -h localhost -U postgres -d notion_mcp_test -c "SELECT tablename FROM pg_tables WHERE schemaname='public';" -t | wc -l
       
       - name: Run unit tests
         working-directory: mcp_server
@@ -81,6 +97,13 @@ jobs:
           RAG_SERVER_SECRET: "test-secret-for-ci-only"
         run: |
           pytest test_production_security_proof.py -v
+      
+      - name: Show Postgres logs on failure
+        if: failure()
+        run: |
+          docker ps -a
+          echo "=== Postgres service logs ==="
+          docker logs $(docker ps -aq --filter "ancestor=pgvector/pgvector:pg16") 2>&1 | tail -100 || true
 
   security-scan:
     name: Security Scanning
