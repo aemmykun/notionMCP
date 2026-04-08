@@ -1,6 +1,8 @@
 venv/
+.venv/
 __pycache__/
 *.pyc
+*.py[cod]
 .env
 .DS_Store
 .idea/
@@ -16,6 +18,7 @@ __pycache__/
 # Test reports
 *.coverage
 .pytest_cache/
+htmlcov/
 
 # Build artifacts
 dist/

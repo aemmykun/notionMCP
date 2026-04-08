@@ -36,7 +36,7 @@ pytestmark = pytest.mark.skipif(
 
 def _create_broken_run_scoped_query():
     """Create a patched run_scoped_query that skips SET LOCAL (simulates bypass)."""
-    import rag
+    from mcp_server import rag
     from psycopg2.extras import RealDictCursor
     
     def broken_run_scoped_query(
@@ -87,7 +87,7 @@ def test_rls_fail_closed_reads():
     Verifies that without workspace context, retrieval returns ZERO rows
     (fail-closed), not all rows (fail-open).
     """
-    import rag
+    from mcp_server import rag
 
     test_workspace_id = str(uuid.uuid4())
     test_source_id = str(uuid.uuid4())
@@ -169,7 +169,7 @@ def test_rls_fail_closed_writes():
     Verifies that INSERT without workspace context fails (WITH CHECK policy).
     Uses trusted context to verify no cross-contamination occurred.
     """
-    import rag
+    from mcp_server import rag
 
     test_workspace_id = str(uuid.uuid4())
 
@@ -237,7 +237,7 @@ def test_rls_cross_workspace_isolation():
     
     Verifies that even with valid SET LOCAL, cross-tenant isolation works.
     """
-    import rag
+    from mcp_server import rag
 
     workspace_a = str(uuid.uuid4())
     workspace_b = str(uuid.uuid4())
@@ -316,7 +316,7 @@ def test_rls_with_check_prevents_cross_tenant_writes():
     Directly validates the WITH CHECK migration. Attempts to INSERT a row
     with workspace_id=A while session is set to workspace_id=B.
     """
-    import rag
+    from mcp_server import rag
 
     workspace_a = str(uuid.uuid4())
     workspace_b = str(uuid.uuid4())
@@ -394,7 +394,7 @@ def test_rls_direct_db_access_bypass_protected():
     Tests that bypassing the run_scoped_query wrapper still cannot
     access data without proper workspace context. Proves DB-layer security.
     """
-    import rag
+    from mcp_server import rag
 
     test_workspace_id = str(uuid.uuid4())
     test_source_id = str(uuid.uuid4())
@@ -500,4 +500,5 @@ def test_rls_fail_closed_behavior():
 if __name__ == "__main__":
     # Allow running directly for manual testing
     test_rls_fail_closed_behavior()
+
 

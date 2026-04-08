@@ -50,7 +50,7 @@ def test_cross_workspace_write_contamination_blocked():
     
     This proves write-path isolation, not just read isolation.
     """
-    import rag
+    from mcp_server import rag
 
     workspace_a = str(uuid.uuid4())
     workspace_b = str(uuid.uuid4())
@@ -200,7 +200,7 @@ def test_owner_bypass_is_dead():
     """
     import psycopg2
     from psycopg2.extras import RealDictCursor
-    import rag
+    from mcp_server import rag
 
     workspace_id = str(uuid.uuid4())
     source_id = str(uuid.uuid4())
@@ -356,3 +356,4 @@ def test_production_security_proof_master():
     print("Repository is defensibly production-ready")
     print("No bypass possible - claim is validated")
     print("=" * 80)
+

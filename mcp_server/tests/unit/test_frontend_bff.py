@@ -4,7 +4,7 @@ from unittest.mock import AsyncMock, patch
 
 from fastapi.testclient import TestClient
 
-import frontend_bff
+from mcp_server import frontend_bff
 
 
 def test_prepare_governed_request_dev_mode_injects_actor_into_payload():

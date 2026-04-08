@@ -1,6 +1,6 @@
 from unittest.mock import call, MagicMock
 
-import rag
+from mcp_server import rag
 
 
 def test_apply_session_context_sets_workspace_only_by_default():

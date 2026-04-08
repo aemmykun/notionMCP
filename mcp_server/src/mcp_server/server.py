@@ -17,7 +17,7 @@ from notion_client.errors import APIResponseError
 from mcp.server import Server
 from mcp.types import Tool, CallToolResult, TextContent
 from mcp.server.streamable_http_manager import StreamableHTTPSessionManager
-from auth import resolve_workspace_id
+from mcp_server.auth import resolve_workspace_id
 
 load_dotenv(dotenv_path=Path(__file__).with_name('.env'), encoding='utf-8-sig')
 
@@ -1090,7 +1090,7 @@ def _rag_unavailable(reason: str) -> dict:
 
 def handle_resource_list(payload, workspace_id: str):
     try:
-        import rag
+        from mcp_server import rag
     except ImportError as exc:
         return _rag_unavailable(str(exc))
 
@@ -1116,7 +1116,7 @@ def handle_resource_list(payload, workspace_id: str):
 
 def handle_resource_get(payload, workspace_id: str):
     try:
-        import rag
+        from mcp_server import rag
     except ImportError as exc:
         return _rag_unavailable(str(exc))
 
@@ -1145,7 +1145,7 @@ def handle_resource_get(payload, workspace_id: str):
 def handle_rag_retrieve(payload, workspace_id: str):
     import asyncio
     try:
-        import rag
+        from mcp_server import rag
     except ImportError as exc:
         return _rag_unavailable(str(exc))
     
@@ -1183,7 +1183,7 @@ def handle_rag_retrieve(payload, workspace_id: str):
 
 def handle_rag_ingest_source(payload, workspace_id: str):
     try:
-        import rag
+        from mcp_server import rag
     except ImportError as exc:
         return _rag_unavailable(str(exc))
     try:
@@ -1209,7 +1209,7 @@ def handle_rag_ingest_source(payload, workspace_id: str):
 
 def handle_rag_ingest_chunks(payload, workspace_id: str):
     try:
-        import rag
+        from mcp_server import rag
     except ImportError as exc:
         return _rag_unavailable(str(exc))
     

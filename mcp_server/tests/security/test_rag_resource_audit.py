@@ -1,6 +1,6 @@
 from unittest.mock import patch
 
-import rag
+from mcp_server import rag
 
 
 def test_list_authorized_resources_records_curated_event_and_audit_metadata():

@@ -25,9 +25,11 @@ dev = [
 ]
 
 [tool.setuptools]
-# Use .pth-based editable installs for Pyright/Pylance compatibility
-# This avoids import hooks that break static analysis
-py-modules = ["server", "auth", "rag", "generate_api_key"]
+package-dir = {"" = "src"}
+
+[tool.setuptools.packages.find]
+where = ["src"]
+include = ["mcp_server*"]
 
 [tool.black]
 line-length = 88

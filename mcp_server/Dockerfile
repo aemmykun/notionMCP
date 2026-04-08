@@ -58,7 +58,7 @@ RUN apt-get update && \
 WORKDIR /app
 
 COPY --from=builder /opt/venv /opt/venv
-COPY --chown=app:app server.py auth.py rag.py ./
+COPY --chown=app:app src/mcp_server ./src/mcp_server
 
 USER app:app
 
@@ -66,4 +66,4 @@ EXPOSE 8080
 
 HEALTHCHECK --interval=30s --timeout=5s --retries=3 CMD python -c "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8080/health', timeout=3).read()"
 
-CMD ["python", "-m", "uvicorn", "server:app", "--host", "0.0.0.0", "--port", "8080"]
+CMD ["python", "-m", "uvicorn", "mcp_server.server:app", "--host", "0.0.0.0", "--port", "8080", "--app-dir", "src"]

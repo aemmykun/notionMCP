@@ -5,7 +5,7 @@ import time
 import pytest
 from unittest.mock import patch, MagicMock
 from fastapi import HTTPException
-from server import (
+from mcp_server.server import (
     _collect_startup_safety_issues,
     _resolve_actor_identity,
     _sign_actor_identity,
@@ -54,14 +54,14 @@ class TestResolveWorkspaceId:
         raw = self._make_env(key, ws)
         with patch.dict(os.environ, {"RAG_API_KEYS": raw, "RAG_SERVER_SECRET": TEST_SERVER_SECRET.decode()}):
             from importlib import reload
-            import auth
+            from mcp_server import auth
             reload(auth)
             # Test the FULL resolver path (not just _KEY_TABLE)
             resolved = auth.resolve_workspace_id(x_api_key=key)
             assert resolved == ws
 
     def test_invalid_key_rejected(self):
-        import auth
+        from mcp_server import auth
         with patch.dict(os.environ, {"RAG_API_KEYS": self._make_env("good-key", "ws-1"), "RAG_SERVER_SECRET": TEST_SERVER_SECRET.decode()}):
             from importlib import reload
             reload(auth)
@@ -70,7 +70,7 @@ class TestResolveWorkspaceId:
             assert exc_info.value.status_code == 401
 
     def test_missing_key_header_rejected(self):
-        import auth
+        from mcp_server import auth
         with patch.dict(os.environ, {"RAG_API_KEYS": self._make_env("some-key", "ws-1"), "RAG_SERVER_SECRET": TEST_SERVER_SECRET.decode()}):
             from importlib import reload
             reload(auth)
@@ -79,7 +79,7 @@ class TestResolveWorkspaceId:
             assert exc_info.value.status_code == 401
 
     def test_no_keys_configured_rejected(self):
-        import auth
+        from mcp_server import auth
         with patch.dict(os.environ, {"RAG_API_KEYS": "", "RAG_SERVER_SECRET": TEST_SERVER_SECRET.decode()}):
             from importlib import reload
             reload(auth)
@@ -89,7 +89,7 @@ class TestResolveWorkspaceId:
     
     def test_malformed_api_keys_format_skipped(self):
         """Test that invalid RAG_API_KEYS format is skipped (logged but doesn't crash)."""
-        import auth
+        from mcp_server import auth
         # Invalid formats: missing colon, extra colons, etc.
         with patch.dict(os.environ, {
             "RAG_API_KEYS": "invalid-format-no-colon,too:many:colons:here",
@@ -104,7 +104,7 @@ class TestResolveWorkspaceId:
     
     def test_duplicate_key_ids_last_wins(self):
         """Test that duplicate key_ids (config error) uses last value (deterministic behavior)."""
-        import auth
+        from mcp_server import auth
         key_id = "abc123" * 10  # 60 chars (valid hex length)
         # Same key_id mapped to two different workspaces (config error)
         with patch.dict(os.environ, {
@@ -118,7 +118,7 @@ class TestResolveWorkspaceId:
     
     def test_missing_server_secret_fails_auth(self):
         """Test that missing RAG_SERVER_SECRET causes authentication failure."""
-        import auth
+        from mcp_server import auth
         key = "test-key"
         ws = "ws-uuid-test"
         raw = self._make_env(key, ws)
@@ -518,7 +518,7 @@ class TestHandleRagIngestSource:
 
 class TestGovernanceHandlersInTestMode:
     def test_workflow_dispatch_skips_live_notion_write(self):
-        import server
+        from mcp_server import server
 
         with (
             patch.dict(os.environ, {"SKIP_NOTION_API": "1"}, clear=False),
@@ -541,7 +541,7 @@ class TestGovernanceHandlersInTestMode:
         create_page.assert_not_called()
 
     def test_approval_request_skips_live_notion_write(self):
-        import server
+        from mcp_server import server
 
         with (
             patch.dict(os.environ, {"SKIP_NOTION_API": "1"}, clear=False),
@@ -607,7 +607,7 @@ class TestHandleRagIngestChunks:
 class TestSecurityBoundaries:
     def test_no_direct_db_access_in_server(self):
         """Verify server.py does not import or call _get_conn directly."""
-        import server
+        from mcp_server import server
         # Check server module doesn't have _get_conn
         assert not hasattr(server, "_get_conn"), (
             "server.py must NOT import _get_conn. "
@@ -616,7 +616,7 @@ class TestSecurityBoundaries:
     
     def test_run_scoped_query_is_only_db_access(self):
         """Verify _get_conn is only called from safe wrapper functions (refactor-safe test)."""
-        import rag
+        from mcp_server import rag
         import ast
         import inspect
         
@@ -650,7 +650,7 @@ class TestSecurityBoundaries:
 class TestRunScopedQueryValidation:
     def test_rejects_invalid_workspace_id(self):
         """Verify run_scoped_query fails fast on non-UUID workspace_id."""
-        import rag
+        from mcp_server import rag
         
         with pytest.raises(ValueError, match="workspace_id must be a valid UUID"):
             rag.run_scoped_query(
@@ -662,7 +662,7 @@ class TestRunScopedQueryValidation:
     
     def test_rejects_empty_workspace_id(self):
         """Verify run_scoped_query fails fast on empty workspace_id."""
-        import rag
+        from mcp_server import rag
         
         with pytest.raises(ValueError, match="workspace_id must be a valid UUID"):
             rag.run_scoped_query(
@@ -671,3 +671,4 @@ class TestRunScopedQueryValidation:
                 params={},
                 returning=False,
             )
+
