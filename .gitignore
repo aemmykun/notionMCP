@@ -2,6 +2,9 @@
 .env
 mcp_server/.env
 
+# Security incident reports
+SECURITY_INCIDENT_REPORT*.md
+
 # Python
 __pycache__/
 *.pyc
