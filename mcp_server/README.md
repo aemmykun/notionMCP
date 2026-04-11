@@ -1,19 +1,86 @@
-# Governance-First Notion + MCP Server Proposal
+# Notion MCP by TenantSage Governor
 
-> Make Notion-based AI workflows governable, approval-aware, and auditable.
+> A governed MCP server for Notion operations, approval flows, audit records, and secure retrieval, exposed for any AI client that can use MCP.
 
-## Proposal Summary
+## What This Repo Is
 
-This repository represents a governance-first MCP layer for Notion-centered AI operations.
+This repository is the environment-specific implementation of a TenantSage governance design.
 
-The proposal is simple:
+The blueprint is the base: governed execution, approval-aware actions, auditable evidence, and secure retrieval boundaries.
 
-- place a governed decision layer between AI agents and business actions
-- require policy before execution
-- require approval for higher-risk actions
-- preserve auditable evidence for every material decision
+This repo is the working design built for the current environment:
 
-The repo is positioned as a product and implementation foundation for teams that want AI automation without losing control of approvals, accountability, and traceability.
+- Notion as the operations surface for governance, audit, workflow, and approval records
+- MCP and HTTP endpoints as the tool interface
+- PostgreSQL plus pgvector as the governed retrieval layer
+- server-side authentication, request correlation, and policy-aware routing
+
+In practical terms, this is not just a generic MCP server. It is a governed MCP backend that uses Notion as its operational system of record and can be called by any AI assistant, agent, or application that supports MCP.
+
+## MCP For Any AI
+
+The Notion part explains the backend model. The MCP part explains who can use it.
+
+Any AI client that can call MCP tools can use this server as a governed execution and retrieval layer.
+
+That includes:
+
+- AI assistants that need policy-aware actions
+- agent frameworks that need approval and audit steps
+- custom copilots that need governed retrieval
+- automation layers that need a structured MCP surface instead of direct database or Notion access
+
+So the repo should be read like this:
+
+- Notion provides the four operational data templates used by the server
+- PostgreSQL provides the governed retrieval boundary
+- MCP provides the interface any AI system can use
+
+## How The Repo Works
+
+The repo has two operating layers.
+
+- Notion layer: four Notion data templates hold operational records used by the governance tools
+- PostgreSQL layer: governed RAG and authorised resource access are enforced at the database boundary
+
+The server receives a tool call, authenticates the caller, resolves workspace context, and then routes the request to the correct backend.
+
+- Governance and policy reads go to the Governance template
+- Explicit audit writes go to the Audit template
+- Operational task creation goes to the Workflow template
+- Human review requests go to the Approval template
+- Governed retrieval and resource reads go to PostgreSQL with session-scoped context and RLS enforcement
+
+## Four Notion Data Templates
+
+This repo depends on four Notion database templates. They are part of how the application works in this implementation, not optional marketing examples.
+
+1. Governance template
+Maps to `GOVERNANCE_DB_ID`.
+Used for policy definitions and governance decisions such as `policy.check`.
+
+2. Audit template
+Maps to `AUDIT_DB_ID`.
+Used for audit-grade records so actions and outcomes can be reviewed later.
+
+3. Workflow template
+Maps to `WORKFLOW_DB_ID`.
+Used for workflow dispatch and operational task tracking.
+
+4. Approval template
+Maps to `APPROVAL_DB_ID`.
+Used for human approval requests when an action should not auto-execute.
+
+## Why This Structure Exists
+
+The goal is to make the repo easy to understand:
+
+- Notion handles the business-facing operational records
+- PostgreSQL handles governed retrieval and data-boundary enforcement
+- the server sits between them as the controlled execution layer
+- MCP makes that controlled execution layer usable by any AI client
+
+That is the main design idea behind this repository.
 
 ## Problem
 
@@ -27,17 +94,17 @@ AI systems can draft, retrieve, decide, and act quickly, but most operating team
 
 Without a governance layer, the answer is usually process, trust, and manual cleanup.
 
-## Proposed Solution
+## Solution Shape
 
-This repository proposes a governed execution layer for Notion and MCP workflows.
+This repository implements a governed execution layer for Notion-backed operations and MCP-based AI workflows.
 
-At the proposal level, the system provides:
+At the system level, it provides:
 
 - policy-gated decisions before execution
 - approval routing for actions that should not auto-run
-- immutable evidence for review, dispute, and audit
+- audit and workflow records in Notion
 - a controlled path for governed retrieval and authorised resource access
-- an operator-managed public deployment shape for production use
+- an operator-managed deployment shape for production use
 
 ## Buyer Outcome
 
