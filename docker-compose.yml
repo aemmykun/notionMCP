@@ -1,14 +1,11 @@
 services:
   mcp:
     build: ./mcp_server
-    ports:
-      - "127.0.0.1:8080:8080"
     env_file: ./mcp_server/.env
-    # REQUIRED in .env:
-    #   - NOTION_TOKEN
-    #   - RAG_SERVER_SECRET (for HMAC-SHA256 authentication)
-    #   - RAG_API_KEYS (format: hmac_sha256_hex:workspace_uuid)
-    #   - RAG_DATABASE_URL=postgresql://mcp_app:${POSTGRES_PASSWORD}@db:5432/notion_mcp
+    environment:
+      - PORT=3000
+    expose:
+      - "3000"
     restart: unless-stopped
     init: true
     read_only: true
@@ -19,7 +16,7 @@ services:
     cap_drop:
       - ALL
     healthcheck:
-      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8080/health', timeout=3).read()"]
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:3000/health', timeout=3).read()"]
       interval: 30s
       timeout: 5s
       retries: 3
@@ -28,10 +25,23 @@ services:
         condition: service_healthy
     networks:
       - internal
-      - public
+
+  cloudflared:
+    image: cloudflare/cloudflared:latest
+    container_name: cloudflared
+    restart: unless-stopped
+    command: tunnel run --token ${CF_TUNNEL_TOKEN}
+    environment:
+      - CF_TUNNEL_TOKEN=${CF_TUNNEL_TOKEN}
+    depends_on:
+      - mcp
+    networks:
+      - internal
 
   db:
-    image: pgvector/pgvector:pg16
+    build:
+      context: .
+      dockerfile: db.Dockerfile
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
@@ -40,10 +50,12 @@ services:
     volumes:
       - pgdata:/var/lib/postgresql/data
       - ./mcp_server/01_init_user.sh:/docker-entrypoint-initdb.d/01_init_user.sh:ro
-      - ./mcp_server/schema.sql:/docker-entrypoint-initdb.d/02_schema.sql:ro
-    # SECURITY: Port 5432 is NOT published to host in production
+      - ./mcp_server/schema.sql:/docker-entrypoint-initdb.d:ro
+    # SECURITY: Port 5433 is NOT published to host in production
     # Database is only accessible via internal Docker network
     # For local dev/testing, use: docker exec -it notionmcp-db-1 psql -U postgres -d notion_mcp
+    ports:
+      - "5433:5432" # Expose Postgres/pgvector on 5433 (host) -> 5432 (container)
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres -d notion_mcp"]
       interval: 5s
@@ -67,3 +79,13 @@ services:
       retries: 10
     networks:
       - internal
+
+networks:
+  internal:
+    driver: bridge
+  public:
+    driver: bridge
+
+volumes:
+  pgdata:
+  redisdata:

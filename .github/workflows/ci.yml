@@ -1,4 +1,33 @@
-name: CI/CD Pipeline
+name: CI
+on: [push, pull_request]
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install Docker Compose
+        run: sudo apt-get update && sudo apt-get install -y docker-compose
+      - name: Start DB (Postgres+pgvector on 5433)
+        run: |
+          docker compose -f docker-compose.yml up -d db
+          docker compose exec db psql -U postgres -c "CREATE EXTENSION IF NOT EXISTS vector;"
+      - name: Install dependencies
+        run: |
+          pip install -r mcp_server/requirements.txt
+      - name: Run tests
+        run: |
+          pytest --cov --cov-report=term-missing
+      - name: Run preflight
+        run: python mcp_server/production_preflight.py --strict
+      - name: Security scan
+        run: |
+          pip install safety bandit
+          safety check
+          bandit -r mcp_server/name: CI/CD Pipeline
 
 on:
   push:

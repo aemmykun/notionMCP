@@ -104,11 +104,11 @@ pip install -r requirements.txt
 
 **Features**:
 
-- ✅ Progress dashboard (58% complete)
-- ✅ Completed vs pending items
-- ✅ Time estimates for remaining work
-- ✅ Priority levels
-- ✅ Next actions clearly listed
+- Progress dashboard (58% complete)
+- Completed vs pending items
+- Time estimates for remaining work
+- Priority levels
+- Next actions clearly listed
 
 **Impact**: Clear visibility into technical debt.
 
@@ -141,6 +141,9 @@ pip install -r requirements.txt
 - ✅ Added links to OPERATIONS.md
 - ✅ Added QA report references
 - ✅ Improved navigation structure
+- ✅ Clarified product framing as `Notion MCP by TenantSage Governor`
+- ✅ Explained the 4 Notion data templates: Governance, Audit, Workflow, Approval
+- ✅ Clarified that MCP surface can be used by any AI client, while Notion remains the operational backend model
 
 ---
 

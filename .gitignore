@@ -30,12 +30,31 @@ htmlcov/
 .tox/
 
 # IDEs
+
+# IDE/editor
 .DS_Store
 .vscode/
 .idea/
 *.swp
 *.swo
 *~
+node_modules/
+Thumbs.db
+ehthumbs.db
+desktop.ini
 
 # Logs
 *.log
+
+# Docker
+*.pid
+*.pid.lock
+docker-compose.override.yml
+docker-compose.*.yml
+docker-compose.*.yaml
+
+# Misc
+tmp/
+*__pycache__/
+*.bak
+*.tmp
